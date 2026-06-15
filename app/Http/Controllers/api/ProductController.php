@@ -1,0 +1,97 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Product;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+
+class ProductController extends Controller
+{
+    public function index()
+    {
+        return response()->json([
+            'success' => true,
+            'data' => Product::with('category')->get()
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'category_id' => 'required|exists:categories,id',
+            'name' => 'required|string|max:255',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'price' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'is_active' => 'nullable|boolean'
+        ]);
+
+        if ($request->hasFile('image')) {
+            $validated['image'] =
+                $request->file('image')
+                ->store('products', 'public');
+        }
+
+        $product = Product::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'data' => $product->load('category')
+        ], 201);
+    }
+
+    public function show(Product $product)
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $product->load('category')
+        ]);
+    }
+
+    public function update(Request $request, Product $product)
+    {
+        $validated = $request->validate([
+            'category_id' => 'required|exists:categories,id',
+            'name' => 'required|string|max:255',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'price' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'is_active' => 'nullable|boolean'
+        ]);
+
+        if ($request->hasFile('image')) {
+
+            if ($product->image) {
+                Storage::disk('public')
+                    ->delete($product->image);
+            }
+
+            $validated['image'] = $request->file('image')
+                ->store('products', 'public');
+        }
+
+        $product->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'data' => $product->fresh()->load('category')
+        ]);
+    }
+
+    public function destroy(Product $product)
+    {
+        if ($product->image) {
+            Storage::disk('public')
+                ->delete($product->image);
+        }
+
+        $product->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Product deleted'
+        ]);
+    }
+}
