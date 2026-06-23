@@ -10,36 +10,62 @@ use App\Http\Controllers\Api\WishlistController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+/*
+|--------------------------------------------------------------------------
+| Public Routes
+|--------------------------------------------------------------------------
+*/
 
-// Public auth routes
-Route::post('/login', [AuthController::class, 'login']);
+// Authentication
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+// Products
+Route::get('/products', [ProductController::class, 'index']);
+Route::get('/products/{product}', [ProductController::class, 'show']);
+// Categories
+Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/categories/{category}', [CategoryController::class, 'show']);
+// Reviews (Read Only)
+Route::get('/reviews', [ReviewController::class, 'index']);
+Route::get('/reviews/{review}', [ReviewController::class, 'show']);
 
-// Public catalog routes
-Route::get('/categories', [CategoryController::class, 'index'])->name('api.categories.index');
-Route::get('/categories/{category}', [CategoryController::class, 'show'])->name('api.categories.show');
-Route::get('/products', [ProductController::class, 'index'])->name('api.products.index');
-Route::get('/products/{product}', [ProductController::class, 'show'])->name('api.products.show');
-Route::get('/reviews', [ReviewController::class, 'index'])->name('api.reviews.index');
-Route::get('/reviews/{review}', [ReviewController::class, 'show'])->name('api.reviews.show');
+// Authenticated Users (Customer + Admin)
 
 Route::middleware('auth:sanctum')->group(function () {
+
+    // Current User
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    // Cart
+    Route::apiResource('carts', CartController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
+    // Wishlist
+    Route::apiResource('wishlists', WishlistController::class)
+        ->only(['index', 'store', 'destroy']);
+    // Orders
+    Route::apiResource('orders', OrderController::class);
+    // Reviews
+    Route::post('/reviews', [ReviewController::class, 'store']);
+    Route::put('/reviews/{review}', [ReviewController::class, 'update']);
+    Route::delete('/reviews/{review}', [ReviewController::class, 'destroy']);
+});
 
-    Route::post('/categories', [CategoryController::class, 'store'])->name('api.categories.store');
-    Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('api.categories.update');
-    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('api.categories.destroy');
+// Admin Only
 
-    Route::post('/products', [ProductController::class, 'store'])->name('api.products.store');
-    Route::put('/products/{product}', [ProductController::class, 'update'])->name('api.products.update');
-    Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('api.products.destroy');
+Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
-    Route::apiResource('wishlists', WishlistController::class)->only(['index', 'store', 'destroy']);
-    Route::apiResource('carts', CartController::class)->only(['index', 'store', 'update', 'destroy']);
-    Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show', 'update']);
-    Route::apiResource('reviews', ReviewController::class)->except(['index', 'show']);
+    // Categories Management
+    Route::post('/categories', [CategoryController::class, 'store']);
+    Route::put('/categories/{category}', [CategoryController::class, 'update']);
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
+    // Products Management
+    Route::post('/products', [ProductController::class, 'store']);
+    Route::put('/products/{product}', [ProductController::class, 'update']);
+    Route::delete('/products/{product}', [ProductController::class, 'destroy']);
+    // Dashboard
+    Route::get('/admin/dashboard-stats', [OrderController::class, 'dashboardStats']);
 });
