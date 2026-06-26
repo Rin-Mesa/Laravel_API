@@ -214,6 +214,50 @@ export const store = {
     return state.wishlist.some(w => w.product_id === productId);
   },
 
+  // Reviews
+  async createReview(productId: number, rating: number, comment: string) {
+    if (!state.token) {
+      this.setAlert("Please login to submit a review", "error");
+      return false;
+    }
+    try {
+      const res = await api.createReview({ product_id: productId, rating, comment });
+      if (res.success) {
+        this.setAlert("Review submitted!", "success");
+        return res.data;
+      }
+    } catch (err: any) {
+      this.setAlert(err.response?.data?.message || "Failed to submit review", "error");
+    }
+    return false;
+  },
+
+  async updateReview(reviewId: number, rating: number, comment: string) {
+    try {
+      const res = await api.updateReview(reviewId, { rating, comment });
+      if (res.success) {
+        this.setAlert("Review updated!", "success");
+        return res.data;
+      }
+    } catch (err: any) {
+      this.setAlert(err.response?.data?.message || "Failed to update review", "error");
+    }
+    return false;
+  },
+
+  async deleteReview(reviewId: number) {
+    try {
+      const res = await api.deleteReview(reviewId);
+      if (res.success) {
+        this.setAlert("Review deleted!", "success");
+        return true;
+      }
+    } catch (err: any) {
+      this.setAlert(err.response?.data?.message || "Failed to delete review", "error");
+    }
+    return false;
+  },
+
   // Categories & Products
   async fetchCategories() {
     const res = await api.getCategories();

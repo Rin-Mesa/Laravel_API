@@ -1,172 +1,212 @@
-const BASE_URL = 'http://localhost:8000/api';
+import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
 
-function getHeaders(isMultipart = false): HeadersInit {
-  const token = localStorage.getItem('precision_token');
-  const headers: Record<string, string> = {
-    'Accept': 'application/json',
-  };
+const BASE_URL = "http://127.0.0.1:8000/api";
+
+const http: AxiosInstance = axios.create({
+  baseURL: BASE_URL,
+  headers: { Accept: "application/json" },
+});
+
+http.interceptors.request.use((config) => {
+  const token = localStorage.getItem("precision_token");
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`;
   }
-  if (!isMultipart) {
-    headers['Content-Type'] = 'application/json';
+  if (!(config.data instanceof FormData)) {
+    config.headers["Content-Type"] = "application/json";
   }
-  return headers;
-}
+  return config;
+});
 
-export async function request(endpoint: string, options: RequestInit = {}) {
-  const isMultipart = options.body instanceof FormData;
-  const url = `${BASE_URL}${endpoint}`;
-  
-  options.headers = {
-    ...getHeaders(isMultipart),
-    ...options.headers,
-  };
-
-  const response = await fetch(url, options);
-  
-  if (response.status === 401) {
-    // Session expired or unauthenticated
-    localStorage.removeItem('precision_token');
-    localStorage.removeItem('precision_user');
-    if (window.location.pathname !== '/login') {
-      window.location.href = '/login';
+http.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("precision_token");
+      localStorage.removeItem("precision_user");
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
     }
-  }
+    return Promise.reject(error);
+  },
+);
 
-  const json = await response.json();
-  if (!response.ok) {
-    throw new Error(json.message || 'API request failed');
-  }
-  return json;
+async function request<T = any>(
+  endpoint: string,
+  options: AxiosRequestConfig = {},
+): Promise<T> {
+  const response = await http({ url: endpoint, ...options });
+  return response.data;
 }
 
 export const api = {
+  http,
+
+  get<T = any>(endpoint: string, config?: AxiosRequestConfig) {
+    return request<T>(endpoint, { method: "GET", ...config });
+  },
+
+  post<T = any>(endpoint: string, data?: any, config?: AxiosRequestConfig) {
+    return request<T>(endpoint, { method: "POST", data, ...config });
+  },
+
+  put<T = any>(endpoint: string, data?: any, config?: AxiosRequestConfig) {
+    return request<T>(endpoint, { method: "PUT", data, ...config });
+  },
+
+  delete<T = any>(endpoint: string, config?: AxiosRequestConfig) {
+    return request<T>(endpoint, { method: "DELETE", ...config });
+  },
+
   // Auth
   async login(credentials: any) {
-    const res = await request('/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
+    const res = await this.post("/login", credentials);
     if (res.success && res.token) {
-      localStorage.setItem('precision_token', res.token);
-      localStorage.setItem('precision_user', JSON.stringify(res.user));
+      localStorage.setItem("precision_token", res.token);
+      localStorage.setItem("precision_user", JSON.stringify(res.user));
     }
     return res;
   },
 
+  async register(data: any) {
+    return this.post("/register", data);
+  },
+
   async logout() {
     try {
-      await request('/logout', { method: 'POST' });
+      await this.post("/logout");
     } finally {
-      localStorage.removeItem('precision_token');
-      localStorage.removeItem('precision_user');
+      localStorage.removeItem("precision_token");
+      localStorage.removeItem("precision_user");
     }
   },
 
   async getProfile() {
-    return request('/profile');
+    return this.get("/profile");
   },
 
   // Categories
   async getCategories() {
-    return request('/categories');
+    return this.get("/categories");
+  },
+
+  async createCategory(data: any) {
+    return this.post("/categories", data);
+  },
+
+  async updateCategory(id: number, data: any) {
+    return this.put(`/categories/${id}`, data);
+  },
+
+  async deleteCategory(id: number) {
+    return this.delete(`/categories/${id}`);
   },
 
   // Products
   async getProducts() {
-    return request('/products');
+    return this.get("/products");
   },
 
   async getProduct(id: number | string) {
-    return request(`/products/${id}`);
+    return this.get(`/products/${id}`);
   },
 
   async createProduct(formData: FormData) {
-    return request('/products', {
-      method: 'POST',
-      body: formData,
-    });
+    return this.post("/products", formData);
   },
 
   async updateProduct(id: number | string, formData: FormData) {
-    formData.append('_method', 'PUT');
-    return request(`/products/${id}`, {
-      method: 'POST',
-      body: formData,
-    });
+    formData.append("_method", "PUT");
+    return this.post(`/products/${id}`, formData);
   },
 
   async deleteProduct(id: number | string) {
-    return request(`/products/${id}`, {
-      method: 'DELETE',
-    });
+    return this.delete(`/products/${id}`);
   },
 
   // Wishlist
   async getWishlist() {
-    return request('/wishlists');
+    return this.get("/wishlists");
   },
 
   async addToWishlist(productId: number) {
-    return request('/wishlists', {
-      method: 'POST',
-      body: JSON.stringify({ product_id: productId }),
-    });
+    return this.post("/wishlists", { product_id: productId });
   },
 
   async removeFromWishlist(wishlistId: number) {
-    return request(`/wishlists/${wishlistId}`, {
-      method: 'DELETE',
-    });
+    return this.delete(`/wishlists/${wishlistId}`);
   },
 
   // Cart
   async getCart() {
-    return request('/carts');
+    return this.get("/carts");
+  },
+
+  // Backward-compatible alias for spec text: GET /api/cart
+  async getCartItems() {
+    return this.getCart();
   },
 
   async addToCart(productId: number, quantity: number = 1) {
-    return request('/carts', {
-      method: 'POST',
-      body: JSON.stringify({ product_id: productId, quantity }),
-    });
+    return this.post("/carts", { product_id: productId, quantity });
   },
 
   async updateCart(cartId: number, quantity: number) {
-    return request(`/carts/${cartId}`, {
-      method: 'PUT',
-      body: JSON.stringify({ quantity }),
-    });
+    return this.put(`/carts/${cartId}`, { quantity });
   },
 
   async removeFromCart(cartId: number) {
-    return request(`/carts/${cartId}`, {
-      method: 'DELETE',
-    });
+    return this.delete(`/carts/${cartId}`);
+  },
+
+  // Backward-compatible alias for spec text: DELETE /api/cart/:id
+  async deleteCartItem(cartId: number) {
+    return this.removeFromCart(cartId);
   },
 
   // Orders
   async getOrders() {
-    return request('/orders');
+    return this.get("/orders");
   },
 
   async createOrder(items: Array<{ product_id: number; quantity: number }>) {
-    return request('/orders', {
-      method: 'POST',
-      body: JSON.stringify({ items }),
-    });
+    return this.post("/orders", { items });
   },
 
   async updateOrderStatus(orderId: number, status: string) {
-    return request(`/orders/${orderId}`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
-    });
+    return this.put(`/orders/${orderId}`, { status });
   },
 
-  // Admin Dashboard
+  // Reviews
+  async createReview(data: {
+    product_id: number;
+    rating: number;
+    comment?: string;
+  }) {
+    return this.post("/reviews", data);
+  },
+
+  async updateReview(id: number, data: { rating: number; comment?: string }) {
+    return this.put(`/reviews/${id}`, data);
+  },
+
+  async deleteReview(id: number) {
+    return this.delete(`/reviews/${id}`);
+  },
+
+  // Admin
   async getDashboardStats() {
-    return request('/admin/dashboard-stats');
+    return this.get("/admin/dashboard-stats");
+  },
+
+  async getUsers() {
+    return this.get("/admin/users");
+  },
+
+  async deleteUser(id: number) {
+    return this.delete(`/admin/users/${id}`);
   },
 };
+
+export default api;

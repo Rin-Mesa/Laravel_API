@@ -1,8 +1,8 @@
 ﻿<script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { store } from '../../stores';
-import * as authService from "../../services/auth";
+import { store } from '../../store';
+import { api } from "../../services/api";
 import { ShoppingBag } from 'lucide-vue-next';
 
 const router = useRouter();
@@ -21,18 +21,17 @@ const handleRegister = async () => {
   }
   loading.value = true;
   try {
-    const res = await authService.register({
+    const res = await api.register({
       name: name.value,
       email: email.value,
       password: password.value,
       password_confirmation: passwordConfirm.value,
     });
-    const payload = res?.data;
-    if (payload?.success) {
+    if (res?.success) {
       store.setAlert('Account created! Please sign in.', 'success');
       router.push('/login');
     } else {
-      error.value = payload?.message || 'Registration failed.';
+      error.value = res?.message || 'Registration failed.';
     }
   } catch (e: any) {
     const data = e?.response?.data;
