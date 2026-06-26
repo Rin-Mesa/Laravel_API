@@ -21,8 +21,17 @@ class ProductController extends Controller
             'category_id' => 'nullable|integer|exists:categories,id',
             'min_price' => 'nullable|numeric|min:0',
             'max_price' => 'nullable|numeric|min:0',
-        ])->validate();
+        ]);
 
+        if ($validated->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid query parameters.',
+                'errors' => $validated->errors(),
+            ], 422);
+        }
+
+        $validated = $validated->validated();
         $page = (int) ($validated['page'] ?? 1);
         $perPage = (int) ($validated['per_page'] ?? 12);
 

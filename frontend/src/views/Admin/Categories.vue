@@ -41,7 +41,7 @@ const editingCategoryId = ref<number | null>(null);
 const formName = ref('');
 const formSlug = ref('');
 const formDescription = ref('');
-const formStatus = ref('active');
+const formIsActive = ref(true);
 const formImageFile = ref<File | null>(null);
 const formImagePreview = ref<string | null>(null);
 
@@ -72,7 +72,8 @@ const filteredCategories = computed(() => {
 
     const matchesStatus =
       statusFilter.value === 'all' ||
-      c.status === statusFilter.value;
+      (statusFilter.value === 'active' && c.is_active) ||
+      (statusFilter.value === 'inactive' && !c.is_active);
 
     return matchesSearch && matchesStatus;
   });
@@ -91,11 +92,11 @@ const totalPages = computed(() => {
 
 // Computed Metrics
 const activeCount = computed(() => {
-  return categories.value.filter(c => c.status === 'active').length;
+  return categories.value.filter(c => c.is_active).length;
 });
 
 const inactiveCount = computed(() => {
-  return categories.value.filter(c => c.status === 'inactive').length;
+  return categories.value.filter(c => !c.is_active).length;
 });
 
 const avgProductsPerCategory = computed(() => {
@@ -104,8 +105,8 @@ const avgProductsPerCategory = computed(() => {
   return (totalProducts / categories.value.length).toFixed(1);
 });
 
-const getStatusBadge = (status: string) => {
-  if (status === 'active') return { label: 'Active', class: 'badge-success', icon: CheckCircle };
+const getStatusBadge = (isActive: boolean) => {
+  if (isActive) return { label: 'Active', class: 'badge-success', icon: CheckCircle };
   return { label: 'Inactive', class: 'badge-danger', icon: XCircle };
 };
 
@@ -123,7 +124,7 @@ const openAddModal = () => {
   formName.value = '';
   formSlug.value = '';
   formDescription.value = '';
-  formStatus.value = 'active';
+  formIsActive.value = true;
   formImageFile.value = null;
   formImagePreview.value = null;
   isModalOpen.value = true;
@@ -135,7 +136,7 @@ const openEditModal = (category: any) => {
   formName.value = category.name;
   formSlug.value = category.slug;
   formDescription.value = category.description || '';
-  formStatus.value = category.status || 'active';
+  formIsActive.value = category.is_active ?? true;
   formImageFile.value = null;
   formImagePreview.value = category.image_url || null;
   isModalOpen.value = true;
@@ -166,7 +167,7 @@ const handleSaveCategory = async () => {
   formData.append('name', formName.value);
   formData.append('slug', formSlug.value);
   formData.append('description', formDescription.value);
-  formData.append('status', formStatus.value);
+  formData.append('is_active', formIsActive.value ? '1' : '0');
 
   if (formImageFile.value) {
     formData.append('image', formImageFile.value);
@@ -388,9 +389,9 @@ const handleExport = () => {
                   <input type="checkbox" :checked="selectedCategories.has(category.id)" @change="toggleSelectCategory(category.id)" class="checkbox-input" />
                 </td>
                 <td>
-                  <img :src="category.image_url || 'https://via.placeholder.com/44'" :alt="category.name" 
+                  <img :src="category.image_url || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2244%22 height=%2244%22 viewBox=%220 0 44 44%22%3E%3Crect width=%2244%22 height=%2244%22 fill=%22%23e2e8f0%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-size=%2212%22 fill=%22%2394a3b8%22%3ECAT%3C/text%3E%3C/svg%3E'" :alt="category.name"
                     class="category-thumb"
-                    @error="($event.target as HTMLImageElement).src = 'https://via.placeholder.com/44?text=CAT'" />
+                    @error="($event.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2244%22 height=%2244%22 viewBox=%220 0 44 44%22%3E%3Crect width=%2244%22 height=%2244%22 fill=%22%23e2e8f0%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-size=%2212%22 fill=%22%2394a3b8%22%3ECAT%3C/text%3E%3C/svg%3E'" />
                 </td>
                 <td style="font-weight: 600;">{{ category.name }}</td>
                 <td style="font-family: monospace; color: var(--text-secondary); font-size: 0.85rem;">
@@ -400,9 +401,9 @@ const handleExport = () => {
                   <span class="product-count-badge">{{ category.products_count || 0 }} products</span>
                 </td>
                 <td>
-                  <span :class="['badge', getStatusBadge(category.status).class]">
-                    <component :is="getStatusBadge(category.status).icon" :size="12" style="margin-right: 4px;" />
-                    {{ getStatusBadge(category.status).label }}
+                  <span :class="['badge', getStatusBadge(category.is_active).class]">
+                    <component :is="getStatusBadge(category.is_active).icon" :size="12" style="margin-right: 4px;" />
+                    {{ getStatusBadge(category.is_active).label }}
                   </span>
                 </td>
                 <td style="text-align: right;">
@@ -471,14 +472,13 @@ const handleExport = () => {
             </div>
 
             <div class="form-group span-2">
-              <label for="c-status">Status</label>
-              <div class="select-wrapper">
-                <select id="c-status" class="form-input select-input" v-model="formStatus">
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-                <ChevronDown :size="16" class="select-chevron" />
-              </div>
+              <label for="c-active" style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                <input id="c-active" type="checkbox" v-model="formIsActive" class="toggle-checkbox" />
+                <span>Active Category</span>
+              </label>
+              <small style="color: var(--text-tertiary); font-size: 0.75rem; margin-top: 4px; display: block;">
+                Enable this category to make it visible in the store
+              </small>
             </div>
 
             <div class="form-group span-2">
@@ -872,6 +872,43 @@ const handleExport = () => {
   font-weight: 600;
   border-radius: var(--radius-sm);
   cursor: pointer;
+}
+
+.toggle-checkbox {
+  width: 44px;
+  height: 24px;
+  appearance: none;
+  background-color: var(--border-color);
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.toggle-checkbox::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background-color: white;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-checkbox:checked {
+  background-color: #2563eb;
+}
+
+.toggle-checkbox:checked::before {
+  transform: translateX(20px);
+}
+
+.toggle-checkbox:focus {
+  outline: 2px solid rgba(37, 99, 235, 0.3);
+  outline-offset: 2px;
 }
 
 .modal-footer {

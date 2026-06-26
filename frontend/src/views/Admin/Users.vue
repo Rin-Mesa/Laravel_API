@@ -41,7 +41,7 @@ const editingUserId = ref<number | null>(null);
 const formName = ref('');
 const formEmail = ref('');
 const formRole = ref('customer');
-const formStatus = ref('active');
+const formIsActive = ref(true);
 
 const fetchUsers = async () => {
   loading.value = true;
@@ -74,7 +74,8 @@ const filteredUsers = computed(() => {
 
     const matchesStatus =
       statusFilter.value === 'all' ||
-      u.status === statusFilter.value;
+      (statusFilter.value === 'active' && u.is_active) ||
+      (statusFilter.value === 'inactive' && !u.is_active);
 
     return matchesSearch && matchesRole && matchesStatus;
   });
@@ -101,7 +102,11 @@ const customerCount = computed(() => {
 });
 
 const activeCount = computed(() => {
-  return users.value.filter(u => u.status === 'active').length;
+  return users.value.filter(u => u.is_active).length;
+});
+
+const inactiveCount = computed(() => {
+  return users.value.filter(u => !u.is_active).length;
 });
 
 const getRoleBadge = (role: string) => {
@@ -109,8 +114,8 @@ const getRoleBadge = (role: string) => {
   return { label: 'Customer', class: 'badge-info', icon: UserIcon };
 };
 
-const getStatusBadge = (status: string) => {
-  if (status === 'active') return { label: 'Active', class: 'badge-success', icon: CheckCircle };
+const getStatusBadge = (isActive: boolean) => {
+  if (isActive) return { label: 'Active', class: 'badge-success', icon: CheckCircle };
   return { label: 'Inactive', class: 'badge-danger', icon: XCircle };
 };
 
@@ -130,7 +135,7 @@ const openAddModal = () => {
   formName.value = '';
   formEmail.value = '';
   formRole.value = 'customer';
-  formStatus.value = 'active';
+  formIsActive.value = true;
   isModalOpen.value = true;
 };
 
@@ -140,7 +145,7 @@ const openEditModal = (user: any) => {
   formName.value = user.name;
   formEmail.value = user.email;
   formRole.value = user.role || 'customer';
-  formStatus.value = user.status || 'active';
+  formIsActive.value = user.is_active ?? true;
   isModalOpen.value = true;
 };
 
@@ -154,7 +159,7 @@ const handleSaveUser = async () => {
     name: formName.value,
     email: formEmail.value,
     role: formRole.value,
-    status: formStatus.value
+    is_active: formIsActive.value
   };
 
   try {
@@ -333,9 +338,9 @@ const handleExport = () => {
               <tr v-for="user in paginatedUsers" :key="user.id">
                 <td>
                   <div class="user-cell">
-                    <img :src="user.avatar_url || 'https://via.placeholder.com/40'" :alt="user.name" 
+                    <img :src="user.avatar_url || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 fill=%22%23e2e8f0%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-size=%2212%22 fill=%22%2394a3b8%22%3EU%3C/text%3E%3C/svg%3E'" :alt="user.name"
                       class="user-avatar"
-                      @error="($event.target as HTMLImageElement).src = 'https://via.placeholder.com/40?text=U'" />
+                      @error="($event.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 fill=%22%23e2e8f0%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-size=%2212%22 fill=%22%2394a3b8%22%3EU%3C/text%3E%3C/svg%3E'" />
                     <span style="font-weight: 600;">{{ user.name }}</span>
                   </div>
                 </td>
@@ -352,9 +357,9 @@ const handleExport = () => {
                   </span>
                 </td>
                 <td>
-                  <span :class="['badge', getStatusBadge(user.status).class]">
-                    <component :is="getStatusBadge(user.status).icon" :size="12" style="margin-right: 4px;" />
-                    {{ getStatusBadge(user.status).label }}
+                  <span :class="['badge', getStatusBadge(user.is_active).class]">
+                    <component :is="getStatusBadge(user.is_active).icon" :size="12" style="margin-right: 4px;" />
+                    {{ getStatusBadge(user.is_active).label }}
                   </span>
                 </td>
                 <td style="color: var(--text-secondary);">
@@ -436,14 +441,13 @@ const handleExport = () => {
             </div>
 
             <div class="form-group">
-              <label for="u-status">Status *</label>
-              <div class="select-wrapper">
-                <select id="u-status" class="form-input select-input" v-model="formStatus" required>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-                <ChevronDown :size="16" class="select-chevron" />
-              </div>
+              <label for="u-active" style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                <input id="u-active" type="checkbox" v-model="formIsActive" class="toggle-checkbox" />
+                <span>Active User</span>
+              </label>
+              <small style="color: var(--text-tertiary); font-size: 0.75rem; margin-top: 4px; display: block;">
+                Enable this user to allow login
+              </small>
             </div>
           </div>
 
@@ -761,6 +765,43 @@ const handleExport = () => {
   border-top-color: var(--accent-secondary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
+}
+
+.toggle-checkbox {
+  width: 44px;
+  height: 24px;
+  appearance: none;
+  background-color: var(--border-color);
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.toggle-checkbox::before {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background-color: white;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-checkbox:checked {
+  background-color: #2563eb;
+}
+
+.toggle-checkbox:checked::before {
+  transform: translateX(20px);
+}
+
+.toggle-checkbox:focus {
+  outline: 2px solid rgba(37, 99, 235, 0.3);
+  outline-offset: 2px;
 }
 
 @keyframes spin {

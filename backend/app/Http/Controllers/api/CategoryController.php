@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -28,6 +29,7 @@ class CategoryController extends Controller
             'name' => 'required|string|max:255|unique:categories,name',
             'slug' => 'nullable|string|max:255|unique:categories,slug',
             'description' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'is_active' => 'sometimes|boolean',
         ]);
 
@@ -42,6 +44,10 @@ class CategoryController extends Controller
         $validated = $validator->validated();
         $validated['slug'] ??= Str::slug($validated['name']);
         $validated['is_active'] = $request->boolean('is_active', true);
+
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image')->store('categories', 'public');
+        }
 
         $category = Category::create($validated);
 
@@ -67,9 +73,10 @@ class CategoryController extends Controller
         $category = Category::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255', Rule::unique('categories', 'name')->ignore($category->id)],
+            'name' => ['sometimes', 'required', 'string', 'max:255', Rule::unique('categories', 'name')->ignore($category->id)],
             'slug' => ['nullable', 'string', 'max:255', Rule::unique('categories', 'slug')->ignore($category->id)],
             'description' => 'nullable|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'is_active' => 'sometimes|boolean',
         ]);
 
@@ -82,8 +89,19 @@ class CategoryController extends Controller
         }
 
         $validated = $validator->validated();
-        $validated['slug'] ??= Str::slug($validated['name']);
+        
+        // Only update fields that are present
+        if (isset($validated['name'])) {
+            $validated['slug'] = $validated['slug'] ?? Str::slug($validated['name']);
+        }
         $validated['is_active'] = $request->boolean('is_active', $category->is_active);
+
+        if ($request->hasFile('image')) {
+            if ($category->image && Storage::disk('public')->exists($category->image)) {
+                Storage::disk('public')->delete($category->image);
+            }
+            $validated['image'] = $request->file('image')->store('categories', 'public');
+        }
 
         $category->update($validated);
 
@@ -103,6 +121,10 @@ class CategoryController extends Controller
                 'success' => false,
                 'message' => 'This category not found.',
             ], Response::HTTP_NOT_FOUND);
+        }
+
+        if ($category->image && Storage::disk('public')->exists($category->image)) {
+            Storage::disk('public')->delete($category->image);
         }
 
         $category->delete();

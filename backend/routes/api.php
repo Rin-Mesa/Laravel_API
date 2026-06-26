@@ -69,6 +69,32 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
         ], 200);
     });
 
+    Route::put('/admin/users/{id}', function (\Illuminate\Http\Request $request, $id) {
+        $user = \App\Models\User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found.',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . $id,
+            'role' => 'sometimes|required|in:admin,customer',
+            'is_active' => 'sometimes|boolean',
+        ]);
+
+        $user->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'data' => $user,
+            'message' => 'User updated successfully.',
+        ], 200);
+    });
+
     Route::delete('/admin/users/{id}', function ($id) {
         $user = \App\Models\User::find($id);
 
