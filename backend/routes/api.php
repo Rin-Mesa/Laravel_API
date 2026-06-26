@@ -58,14 +58,45 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 
+    // Admin users
+    Route::get('/admin/users', function (\Illuminate\Http\Request $request) {
+        return response()->json([
+            'success' => true,
+            'data' => \App\Models\User::query()
+                ->select('id', 'name', 'email', 'role', 'created_at')
+                ->latest()
+                ->get(),
+        ], 200);
+    });
+
+    Route::delete('/admin/users/{id}', function ($id) {
+        $user = \App\Models\User::find($id);
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found.',
+            ], 404);
+        }
+
+        $user->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User deleted successfully.',
+        ], 200);
+    });
+
     // Categories Management
     Route::post('/categories', [CategoryController::class, 'store']);
     Route::put('/categories/{category}', [CategoryController::class, 'update']);
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
+
     // Products Management
     Route::post('/products', [ProductController::class, 'store']);
     Route::put('/products/{product}', [ProductController::class, 'update']);
     Route::delete('/products/{product}', [ProductController::class, 'destroy']);
+
     // Dashboard
     Route::get('/admin/dashboard-stats', [OrderController::class, 'dashboardStats']);
 });

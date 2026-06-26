@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { api } from '../../services/api';
 import { store } from '../../store';
 import { 
@@ -8,10 +8,13 @@ import {
   AlertTriangle, 
   Users, 
   ArrowUpRight, 
+  ArrowDownRight,
   MapPin,
   MoreVertical,
   RefreshCw,
-  DollarSign
+  DollarSign,
+  BarChart3,
+  Eye
 } from 'lucide-vue-next';
 
 interface DashboardData {
@@ -22,10 +25,12 @@ interface DashboardData {
   active_users: number;
   recent_orders: any[];
   sales_chart: any[];
+  sales_by_category?: any[];
 }
 
 const stats = ref<DashboardData | null>(null);
 const loading = ref(true);
+const chartTimeframe = ref<'week' | 'month'>('month');
 
 const fetchDashboardStats = async () => {
   loading.value = true;
@@ -58,7 +63,7 @@ const formatNumber = (val: number) => {
 
 // SVG Chart Path Generator
 const chartPath = computed(() => {
-  if (!stats.value || !stats.value.sales_chart) return '';
+  if (!stats.value || !stats.value.sales_chart) return { path: '', points: [] };
   const data = stats.value.sales_chart;
   const width = 500;
   const height = 150;
@@ -72,11 +77,11 @@ const chartPath = computed(() => {
   const points = data.map((d, index) => {
     const x = padding + (index / maxX) * (width - padding * 2);
     const y = height - padding - ((d.revenue - minY) / (maxY - minY)) * (height - padding * 2);
-    return { x, y };
+    return { x, y, value: d.revenue };
   });
 
   // Generate cubic bezier curve path
-  if (points.length === 0) return '';
+  if (points.length === 0) return { path: '', points: [] };
   let path = `M ${points[0]!.x} ${points[0]!.y}`;
   for (let i = 0; i < points.length - 1; i++) {
     const p0 = points[i]!;
@@ -87,10 +92,29 @@ const chartPath = computed(() => {
     const cpY2 = p1.y;
     path += ` C ${cpX1} ${cpY1}, ${cpX2} ${cpY2}, ${p1.x} ${p1.y}`;
   }
-  return path;
+  return { path, points };
 });
 
-import { computed } from 'vue';
+// Category Bar Chart
+const categoryChartData = computed(() => {
+  if (!stats.value || !stats.value.sales_by_category) return [];
+  const data = stats.value.sales_by_category;
+  const maxValue = Math.max(...data.map(d => d.revenue || 0));
+  return data.map(d => ({
+    ...d,
+    percentage: maxValue > 0 ? (d.revenue / maxValue) * 100 : 0
+  }));
+});
+
+const getOrderStatusBadge = (status: string) => {
+  const statusMap: Record<string, { label: string; class: string }> = {
+    'Delivered': { label: 'Delivered', class: 'badge-success' },
+    'Processing': { label: 'Processing', class: 'badge-info' },
+    'Pending': { label: 'Pending', class: 'badge-warning' },
+    'Cancelled': { label: 'Cancelled', class: 'badge-danger' }
+  };
+  return statusMap[status] || { label: status, class: 'badge-info' };
+};
 </script>
 
 <template>
@@ -184,8 +208,8 @@ import { computed } from 'vue';
               <p>Revenue performance across the last 7 months</p>
             </div>
             <div class="chart-filters">
-              <span class="filter-btn active">Month</span>
-              <span class="filter-btn">Week</span>
+              <span :class="['filter-btn', { active: chartTimeframe === 'month' }]" @click="chartTimeframe = 'month'">Month</span>
+              <span :class="['filter-btn', { active: chartTimeframe === 'week' }]" @click="chartTimeframe = 'week'">Week</span>
             </div>
           </div>
           <div class="chart-content">
@@ -197,7 +221,7 @@ import { computed } from 'vue';
               <line x1="20" y1="130" x2="480" y2="130" stroke="#cbd5e1" stroke-dasharray="3" stroke-width="1" />
               
               <!-- Draw Line Path -->
-              <path :d="chartPath" fill="none" stroke="#2563eb" stroke-width="3.5" stroke-linecap="round" />
+              <path :d="chartPath.path" fill="none" stroke="#2563eb" stroke-width="3.5" stroke-linecap="round" />
               
               <!-- Hover highlight circle -->
               <circle cx="250" cy="56" r="5" fill="#2563eb" stroke="#ffffff" stroke-width="2" />
@@ -214,20 +238,28 @@ import { computed } from 'vue';
           </div>
         </div>
 
-        <!-- Performance Map -->
-        <div class="card map-card">
+        <!-- Sales by Category Bar Chart -->
+        <div class="card chart-card">
           <div class="card-header">
-            <h3>Performance Map</h3>
+            <div>
+              <h3>Sales by Category</h3>
+              <p>Top performing categories</p>
+            </div>
+            <BarChart3 :size="20" style="color: var(--text-tertiary);" />
           </div>
-          <div class="map-placeholder">
-            <div class="map-dot-pulse"></div>
-            <div class="map-dot-pulse pulse-2"></div>
-            <div class="map-marker-container">
-              <MapPin :size="24" class="map-pin-icon" />
-              <div class="map-tooltip">
-                <h4>Regional Hotspots</h4>
-                <p>Sales concentration is highest in metropolitan areas.</p>
+          <div class="category-chart-content">
+            <div v-if="categoryChartData.length > 0" class="category-bars">
+              <div v-for="item in categoryChartData.slice(0, 5)" :key="item.category" class="category-bar-row">
+                <span class="category-bar-label">{{ item.category }}</span>
+                <div class="category-bar-track">
+                  <div class="category-bar-fill" :style="{ width: item.percentage + '%' }"></div>
+                </div>
+                <span class="category-bar-value">{{ formatCurrency(item.revenue) }}</span>
               </div>
+            </div>
+            <div v-else class="chart-empty-state">
+              <BarChart3 :size="32" style="color: var(--text-tertiary); margin-bottom: 8px;" />
+              <p style="font-size: 0.8rem; color: var(--text-secondary);">No category data available</p>
             </div>
           </div>
         </div>
@@ -240,7 +272,7 @@ import { computed } from 'vue';
             <h3>Recent Orders</h3>
             <p>Monitoring the latest customer transactions</p>
           </div>
-          <router-link to="/admin/dashboard" class="view-all-link">
+          <router-link to="/admin/orders" class="view-all-link">
             View All Orders &rarr;
           </router-link>
         </div>
@@ -268,8 +300,8 @@ import { computed } from 'vue';
                 <td style="color: var(--text-secondary);">{{ order.date }}</td>
                 <td style="font-weight: 600;">{{ formatCurrency(order.amount) }}</td>
                 <td>
-                  <span :class="['badge', order.status === 'Delivered' ? 'badge-success' : 'badge-warning']">
-                    {{ order.status }}
+                  <span :class="['badge', getOrderStatusBadge(order.status).class]">
+                    {{ getOrderStatusBadge(order.status).label }}
                   </span>
                 </td>
                 <td style="text-align: right;">
@@ -349,6 +381,18 @@ import { computed } from 'vue';
 @media (max-width: 1024px) {
   .visuals-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .dashboard-header button {
+    width: 100%;
   }
 }
 
@@ -475,6 +519,69 @@ import { computed } from 'vue';
   font-size: 0.7rem;
   color: var(--text-secondary);
   line-height: 1.2;
+}
+
+/* Category Bar Chart */
+.category-chart-content {
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.category-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.category-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.category-bar-label {
+  width: 100px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.category-bar-track {
+  flex: 1;
+  height: 8px;
+  background-color: var(--bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.category-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb, #3b82f6);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.category-bar-value {
+  width: 80px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.chart-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-tertiary);
 }
 
 /* Recent Orders Table */

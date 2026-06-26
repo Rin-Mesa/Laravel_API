@@ -86,6 +86,14 @@ export const api = {
     return this.get("/profile");
   },
 
+  async updateProfile(data: any) {
+    return this.put("/profile", data);
+  },
+
+  async changePassword(data: any) {
+    return this.put("/change-password", data);
+  },
+
   // Categories
   async getCategories() {
     return this.get("/categories");
@@ -202,6 +210,14 @@ export const api = {
 
   async getUsers() {
     return this.get("/admin/users");
+  },
+
+  async createUser(data: any) {
+    return this.post("/admin/users", data);
+  },
+
+  async updateUser(id: number, data: any) {
+    return this.put(`/admin/users/${id}`, data);
   },
 
   async deleteUser(id: number) {

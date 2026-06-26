@@ -96,6 +96,19 @@ export const store = {
     this.setAlert('Logged out successfully', 'info');
   },
 
+  async fetchUser() {
+    if (!state.token) return;
+    try {
+      const res = await api.getProfile();
+      if (res.success) {
+        state.user = res.data;
+        localStorage.setItem('precision_user', JSON.stringify(res.data));
+      }
+    } catch (err) {
+      console.error('Failed to fetch user profile', err);
+    }
+  },
+
   async switchUser(role: 'admin' | 'customer') {
     // Quick helper to switch users for demonstration
     const email = role === 'admin' ? 'admin@precision.io' : 'alex@precision.io';

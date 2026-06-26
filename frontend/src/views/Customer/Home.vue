@@ -2,14 +2,14 @@
 import { ref, onMounted, computed } from 'vue';
 import { store } from '../../store';
 import { api } from '../../services/api';
-import { 
-  ShoppingCart, 
-  Heart, 
-  Star, 
-  Cpu, 
-  Laptop, 
-  Headphones, 
-  Tv, 
+import {
+  ShoppingCart,
+  Heart,
+  Star,
+  Cpu,
+  Laptop,
+  Headphones,
+  Tv,
   ArrowRight,
   Send,
   Grid,
@@ -26,8 +26,9 @@ const fetchProducts = async () => {
   try {
     const res = await api.getProducts();
     if (res.success) {
-      products.value = res.data;
+      products.value = Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
     }
+
   } catch (e) {
     console.error('Failed to load storefront products', e);
   } finally {
@@ -82,10 +83,12 @@ const handleSubscribe = () => {
           <span class="hero-tagline">NEXT-GEN INTERFACE PACK</span>
           <h1 class="hero-title">Precision Performance Defined.</h1>
           <p class="hero-description">
-            Experience the apex of retail technology. Our curated collection of high-fidelity gadgets and high-performance hardware is designed for those who demand excellence in every pixel.
+            Experience the apex of retail technology. Our curated collection of high-fidelity gadgets and
+            high-performance hardware is designed for those who demand excellence in every pixel.
           </p>
           <div class="hero-actions">
-            <button class="btn btn-primary" @click="$el.querySelector('#trending-products').scrollIntoView({ behavior: 'smooth' })">
+            <button class="btn btn-primary"
+              @click="$el.querySelector('#trending-products').scrollIntoView({ behavior: 'smooth' })">
               Shop Now
             </button>
             <button class="btn btn-outline">
@@ -93,7 +96,7 @@ const handleSubscribe = () => {
             </button>
           </div>
         </div>
-        
+
         <div class="hero-visual">
           <!-- Animated phone blueprint SVG -->
           <svg viewBox="0 0 400 400" class="blueprint-svg">
@@ -105,27 +108,33 @@ const handleSubscribe = () => {
             </defs>
             <!-- Background mesh -->
             <rect width="400" height="400" fill="none" />
-            <circle cx="200" cy="200" r="160" fill="none" stroke="rgba(59, 130, 246, 0.08)" stroke-width="1.5" stroke-dasharray="8 4" />
+            <circle cx="200" cy="200" r="160" fill="none" stroke="rgba(59, 130, 246, 0.08)" stroke-width="1.5"
+              stroke-dasharray="8 4" />
             <circle cx="200" cy="200" r="120" fill="none" stroke="rgba(16, 185, 129, 0.1)" stroke-width="1" />
-            
+
             <!-- Phone outline -->
-            <rect x="110" y="50" width="180" height="300" rx="24" fill="url(#glowGrad)" stroke="#3b82f6" stroke-width="2" />
-            <rect x="120" y="60" width="160" height="280" rx="16" fill="none" stroke="rgba(59, 130, 246, 0.2)" stroke-width="1" />
-            
+            <rect x="110" y="50" width="180" height="300" rx="24" fill="url(#glowGrad)" stroke="#3b82f6"
+              stroke-width="2" />
+            <rect x="120" y="60" width="160" height="280" rx="16" fill="none" stroke="rgba(59, 130, 246, 0.2)"
+              stroke-width="1" />
+
             <!-- Camera Module -->
             <rect x="135" y="75" width="40" height="40" rx="8" fill="none" stroke="#3b82f6" stroke-width="1.5" />
             <circle cx="155" cy="95" r="10" fill="none" stroke="#10b981" stroke-width="1.5" />
-            
+
             <!-- Circuit paths -->
-            <path d="M 175 95 L 230 95 L 230 180" fill="none" stroke="rgba(16, 185, 129, 0.4)" stroke-width="1.5" stroke-dasharray="3" />
+            <path d="M 175 95 L 230 95 L 230 180" fill="none" stroke="rgba(16, 185, 129, 0.4)" stroke-width="1.5"
+              stroke-dasharray="3" />
             <path d="M 230 180 L 160 180 L 160 250" fill="none" stroke="rgba(59, 130, 246, 0.4)" stroke-width="1.5" />
-            
+
             <!-- Chip representation -->
-            <rect x="180" y="140" width="40" height="40" rx="6" fill="#0b0f19" stroke="#10b981" stroke-width="2" class="pulse-chip" />
+            <rect x="180" y="140" width="40" height="40" rx="6" fill="#0b0f19" stroke="#10b981" stroke-width="2"
+              class="pulse-chip" />
             <text x="189" y="164" fill="#10b981" font-size="9" font-weight="bold" font-family="monospace">CPU</text>
-            
+
             <!-- Battery cell -->
-            <rect x="135" y="210" width="130" height="70" rx="8" fill="none" stroke="rgba(59, 130, 246, 0.3)" stroke-width="1.5" />
+            <rect x="135" y="210" width="130" height="70" rx="8" fill="none" stroke="rgba(59, 130, 246, 0.3)"
+              stroke-width="1.5" />
             <line x1="145" y1="225" x2="255" y2="225" stroke="rgba(59, 130, 246, 0.2)" stroke-width="2" />
             <line x1="145" y1="245" x2="255" y2="245" stroke="rgba(59, 130, 246, 0.2)" stroke-width="2" />
             <line x1="145" y1="265" x2="255" y2="265" stroke="rgba(59, 130, 246, 0.2)" stroke-width="2" />
@@ -139,41 +148,41 @@ const handleSubscribe = () => {
       <h2 class="section-title">Featured Categories</h2>
       <div class="categories-grid">
         <!-- 1. Computing -->
-        <div class="category-card large-card animate-fade-in">
+        <router-link to="/products" class="category-card large-card animate-fade-in">
           <div class="card-bg-img img-comp"></div>
           <div class="category-content">
             <h3>High-Performance Computing</h3>
             <p>Laptops, Workstations & Gaming Rigs</p>
             <button class="category-btn">Explore Category</button>
           </div>
-        </div>
-        
+        </router-link>
+
         <!-- 2. Audio -->
-        <div class="category-card animate-fade-in">
+        <router-link to="/products" class="category-card animate-fade-in">
           <div class="card-bg-img img-audio"></div>
           <div class="category-content">
             <h3>Immersive Audio</h3>
             <p>Noise Canceling & Hi-Fi Systems</p>
           </div>
-        </div>
+        </router-link>
 
         <!-- 3. Smart Living -->
-        <div class="category-card animate-fade-in">
+        <router-link to="/products" class="category-card animate-fade-in">
           <div class="card-bg-img img-smart"></div>
           <div class="category-content">
             <h3>Smart Living</h3>
             <p>Automated sensors & controllers</p>
           </div>
-        </div>
+        </router-link>
 
         <!-- 4. Photography -->
-        <div class="category-card animate-fade-in">
+        <router-link to="/products" class="category-card animate-fade-in">
           <div class="card-bg-img img-photo"></div>
           <div class="category-content">
             <h3>Photography</h3>
             <p>Cameras, lenses, & lighting mounts</p>
           </div>
-        </div>
+        </router-link>
       </div>
     </section>
 
@@ -184,9 +193,10 @@ const handleSubscribe = () => {
           <h2 class="section-title">Trending Products</h2>
           <p class="section-subtitle">Most wanted electronics this week</p>
         </div>
-        <button class="btn btn-outline btn-sm">
-          View All Products <ArrowRight :size="14" />
-        </button>
+        <router-link to="/products" class="btn btn-outline btn-sm">
+          View All Products
+          <ArrowRight :size="14" />
+        </router-link>
       </div>
 
       <div v-if="loading" class="trending-loading">
@@ -201,29 +211,19 @@ const handleSubscribe = () => {
             <span v-if="getBadge(product.sku)" :class="['card-badge', getBadge(product.sku)?.class]">
               {{ getBadge(product.sku)?.text }}
             </span>
-            <button 
-              class="wishlist-toggle-btn"
-              @click="handleToggleWishlist(product.id)"
-              :title="store.isWishlisted(product.id) ? 'Remove from Wishlist' : 'Add to Wishlist'"
-            >
-              <Heart 
-                :size="18" 
-                :class="{ 'wishlist-active': store.isWishlisted(product.id) }" 
-              />
+            <button class="wishlist-toggle-btn" @click="handleToggleWishlist(product.id)"
+              :title="store.isWishlisted(product.id) ? 'Remove from Wishlist' : 'Add to Wishlist'">
+              <Heart :size="18" :class="{ 'wishlist-active': store.isWishlisted(product.id) }" />
             </button>
-            <img 
-              :src="product.image_url" 
-              :alt="product.name" 
-              class="product-card-img"
-              @error="($event.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=400&auto=format&fit=crop'"
-            />
+            <img :src="product.image_url" :alt="product.name" class="product-card-img"
+              @error="($event.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=400&auto=format&fit=crop'" />
           </div>
 
           <!-- Card Details -->
           <div class="product-card-body">
             <span class="product-card-category">{{ product.category?.name }}</span>
             <h3 class="product-card-name">{{ product.name }}</h3>
-            
+
             <div class="product-rating">
               <div class="stars">
                 <Star v-for="i in 5" :key="i" :size="12" class="filled-star" />
@@ -237,10 +237,12 @@ const handleSubscribe = () => {
                   {{ new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(product.price) }}
                 </span>
                 <span v-if="getOriginalPrice(product.sku)" class="original-price">
-                  {{ new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(getOriginalPrice(product.sku)!) }}
+                  {{ new Intl.NumberFormat('en-US', {
+                    style: 'currency', currency: 'USD'
+                  }).format(getOriginalPrice(product.sku)!) }}
                 </span>
               </div>
-              
+
               <button class="add-to-cart-card-btn" @click="handleAddToCart(product.id)">
                 <ShoppingCart :size="14" />
                 Add to Cart
@@ -255,15 +257,10 @@ const handleSubscribe = () => {
     <section class="cta-section animate-fade-in">
       <div class="cta-content">
         <h2>Stay ahead of the curve.</h2>
-        <p>Join our elite member list for early access to product launches, exclusive technical guides, and member-only pricing events.</p>
+        <p>Join our elite member list for early access to product launches, exclusive technical guides, and member-only
+          pricing events.</p>
         <form @submit.prevent="handleSubscribe" class="cta-form">
-          <input 
-            type="email" 
-            placeholder="Enter your email" 
-            class="cta-input" 
-            v-model="emailInput" 
-            required 
-          />
+          <input type="email" placeholder="Enter your email" class="cta-input" v-model="emailInput" required />
           <button type="submit" class="cta-submit-btn">
             Subscribe
           </button>
@@ -283,7 +280,7 @@ const handleSubscribe = () => {
             <Settings :size="18" />
           </div>
         </div>
-        
+
         <div class="footer-links-col">
           <h4>Shop</h4>
           <ul>
@@ -321,18 +318,46 @@ const handleSubscribe = () => {
 
 <style scoped>
 .home-wrapper {
-  background-color: #05070c;
-  color: #f3f4f6;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   font-family: var(--font-body);
   display: flex;
   flex-direction: column;
-  gap: 60px;
+  gap: 80px;
 }
 
 /* Hero Section */
 .hero-section {
-  padding: 80px 0 20px 0;
-  background: radial-gradient(circle at 80% 20%, rgba(37, 99, 235, 0.08) 0%, rgba(0, 0, 0, 0) 50%);
+  padding: 100px 0 60px 0;
+  background: var(--accent-gradient);
+  background-size: 200% 200%;
+  animation: gradientShift 10s ease infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 600px;
+  height: 600px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  animation: float 8s ease-in-out infinite;
+}
+
+.hero-section::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 400px;
+  height: 400px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 50%;
+  animation: float 10s ease-in-out infinite reverse;
 }
 
 .hero-container {
@@ -342,13 +367,16 @@ const handleSubscribe = () => {
   display: grid;
   grid-template-columns: 1.2fr 1fr;
   align-items: center;
-  gap: 40px;
+  gap: 60px;
+  position: relative;
+  z-index: 1;
 }
 
 @media (max-width: 768px) {
   .hero-container {
     grid-template-columns: 1fr;
   }
+
   .hero-visual {
     display: none;
   }
@@ -357,44 +385,52 @@ const handleSubscribe = () => {
 .hero-text {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .hero-tagline {
   font-family: var(--font-body);
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  color: #3b82f6;
+  color: rgba(255, 255, 255, 0.9);
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  padding: 8px 16px;
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: fit-content;
 }
 
 .hero-title {
   font-family: var(--font-display);
-  font-size: 3.2rem;
+  font-size: 3.5rem;
   font-weight: 800;
-  line-height: 1.15;
+  line-height: 1.1;
   color: white;
   letter-spacing: -0.03em;
+  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.2);
 }
 
 .hero-description {
-  font-size: 1rem;
-  color: #9ca3af;
-  line-height: 1.6;
+  font-size: 1.15rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.7;
 }
 
 .hero-actions {
   display: flex;
   gap: 16px;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .blueprint-svg {
   width: 100%;
-  max-width: 380px;
+  max-width: 450px;
   margin: 0 auto;
   overflow: visible;
+  filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.3));
 }
 
 .pulse-chip {
@@ -411,40 +447,41 @@ const handleSubscribe = () => {
 
 .section-title {
   font-family: var(--font-display);
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: white;
-  margin-bottom: 24px;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 32px;
   position: relative;
   display: inline-block;
-}
-
-.section-title::after {
-  content: '';
-  position: absolute;
-  bottom: -6px;
-  left: 0;
-  width: 36px;
-  height: 3px;
-  background-color: #2563eb;
-  border-radius: 2px;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .categories-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  grid-auto-rows: 240px;
+  gap: 24px;
+  grid-auto-rows: 260px;
 }
 
 .category-card {
   position: relative;
-  border-radius: var(--radius-lg);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-color);
   overflow: hidden;
   display: flex;
   align-items: flex-end;
-  padding: 24px;
+  padding: 28px;
+  transition: all var(--transition-normal);
+  background: var(--bg-card);
+}
+
+.category-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--accent-primary);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 }
 
 .large-card {
@@ -457,6 +494,7 @@ const handleSubscribe = () => {
   .categories-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
   .large-card {
     grid-column: span 2;
   }
@@ -466,6 +504,7 @@ const handleSubscribe = () => {
   .categories-grid {
     grid-template-columns: 1fr;
   }
+
   .large-card {
     grid-column: span 1;
   }
@@ -491,12 +530,15 @@ const handleSubscribe = () => {
 .img-comp {
   background-image: url('https://images.unsplash.com/photo-1593642632823-8f785ba67e45?q=80&w=800&auto=format&fit=crop');
 }
+
 .img-audio {
   background-image: url('https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=600&auto=format&fit=crop');
 }
+
 .img-smart {
   background-image: url('https://images.unsplash.com/photo-1558002038-1055907df827?q=80&w=600&auto=format&fit=crop');
 }
+
 .img-photo {
   background-image: url('https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=600&auto=format&fit=crop');
 }
@@ -511,34 +553,36 @@ const handleSubscribe = () => {
 
 .category-content h3 {
   font-family: var(--font-display);
-  font-size: 1.3rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: white;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .category-content p {
-  font-size: 0.85rem;
-  color: #d1d5db;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .category-btn {
-  background-color: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   color: white;
-  padding: 8px 16px;
-  font-size: 0.8rem;
+  padding: 10px 20px;
+  font-size: 0.85rem;
   font-weight: 600;
-  border-radius: var(--radius-sm);
+  border-radius: 50px;
   cursor: pointer;
   align-self: flex-start;
-  margin-top: 8px;
+  margin-top: 12px;
   transition: all var(--transition-fast);
-  backdrop-filter: blur(8px);
 }
 
 .category-btn:hover {
   background-color: white;
-  color: #0f172a;
+  color: var(--accent-primary);
+  transform: translateY(-2px);
 }
 
 /* Trending Products */
@@ -557,17 +601,18 @@ const handleSubscribe = () => {
 }
 
 .section-subtitle {
-  font-size: 0.85rem;
-  color: #9ca3af;
-  margin-top: 12px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-top: 8px;
 }
 
 .trending-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 60px 0;
+  padding: 80px 0;
   gap: 16px;
+  color: var(--text-tertiary);
 }
 
 .products-grid {
@@ -577,39 +622,55 @@ const handleSubscribe = () => {
 }
 
 .product-item-card {
-  background-color: #111827;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: transform var(--transition-fast), border-color var(--transition-fast);
+  transition: all var(--transition-normal);
+  position: relative;
+}
+
+.product-item-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent-gradient);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+  z-index: 0;
 }
 
 .product-item-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(59, 130, 246, 0.2);
+  transform: translateY(-8px);
+  border-color: var(--accent-primary);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 }
 
 .product-card-top {
   position: relative;
   padding: 24px;
-  background-color: #0b0f19;
+  background-color: var(--bg-tertiary);
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 200px;
+  height: 220px;
+  overflow: hidden;
+  z-index: 1;
 }
 
 .product-card-img {
-  max-height: 100%;
-  max-width: 100%;
+  max-height: 90%;
+  max-width: 90%;
   object-fit: contain;
-  transition: transform var(--transition-fast);
+  transition: transform var(--transition-normal);
+  filter: brightness(0.9);
 }
 
 .product-item-card:hover .product-card-img {
-  transform: scale(1.05);
+  transform: scale(1.08);
+  filter: brightness(1);
 }
 
 .card-badge {
@@ -618,35 +679,47 @@ const handleSubscribe = () => {
   left: 16px;
   font-size: 0.7rem;
   font-weight: 800;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
   z-index: 10;
+  backdrop-filter: blur(10px);
 }
 
-.sale-badge { background-color: #ef4444; color: white; }
-.new-badge { background-color: #3b82f6; color: white; }
+.sale-badge {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+}
+
+.new-badge {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+}
 
 .wishlist-toggle-btn {
   position: absolute;
   top: 16px;
   right: 16px;
-  background-color: rgba(17, 24, 39, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  width: 32px;
-  height: 32px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all var(--transition-fast);
   z-index: 10;
 }
 
 .wishlist-toggle-btn:hover {
-  background-color: rgba(17, 24, 39, 0.9);
-  color: #f87171;
+  background: rgba(0, 0, 0, 0.8);
+  color: #ef4444;
+  transform: scale(1.1);
 }
 
 .wishlist-active {
@@ -658,23 +731,32 @@ const handleSubscribe = () => {
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   flex: 1;
+  z-index: 1;
+  position: relative;
+  background: var(--bg-card);
 }
 
 .product-card-category {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #3b82f6;
+  color: var(--accent-secondary);
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .product-card-name {
   font-family: var(--font-display);
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: white;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
   line-height: 1.3;
+  transition: color var(--transition-fast);
+}
+
+.product-item-card:hover .product-card-name {
+  color: var(--accent-primary);
 }
 
 .product-rating {
@@ -694,7 +776,7 @@ const handleSubscribe = () => {
 
 .rating-count {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--text-tertiary);
 }
 
 .product-card-footer {
@@ -702,8 +784,8 @@ const handleSubscribe = () => {
   justify-content: space-between;
   align-items: center;
   margin-top: auto;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
 }
 
 .price-container {
@@ -713,35 +795,40 @@ const handleSubscribe = () => {
 
 .current-price {
   font-family: var(--font-display);
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: white;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .original-price {
-  font-size: 0.75rem;
-  color: #6b7280;
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
   text-decoration: line-through;
 }
 
 .add-to-cart-card-btn {
-  background-color: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  background: var(--accent-gradient);
+  color: white;
+  border: none;
   border-radius: var(--radius-sm);
-  padding: 8px 14px;
-  font-size: 0.8rem;
+  padding: 10px 16px;
+  font-size: 0.85rem;
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
   transition: all var(--transition-fast);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
 
 .add-to-cart-card-btn:hover {
-  background-color: #2563eb;
-  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
 /* CTA Section */
@@ -858,7 +945,8 @@ const handleSubscribe = () => {
   color: #4b5563;
 }
 
-.footer-links-col h4, .footer-map-col h4 {
+.footer-links-col h4,
+.footer-map-col h4 {
   font-family: var(--font-display);
   font-size: 0.95rem;
   font-weight: 700;
@@ -885,7 +973,7 @@ const handleSubscribe = () => {
 
 .footer-map-mock {
   background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15) 0%, rgba(17, 24, 39, 0.8) 100%),
-              url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50" opacity="0.03"><rect width="50" height="50" fill="none" stroke="%23fff" stroke-width="0.5"/></svg>');
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50" opacity="0.03"><rect width="50" height="50" fill="none" stroke="%23fff" stroke-width="0.5"/></svg>');
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-md);
   height: 120px;

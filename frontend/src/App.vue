@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { store } from './store';
 import { 
@@ -17,7 +17,8 @@ import {
   Bell,
   Sliders,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Menu
 } from 'lucide-vue-next';
 
 const route = useRoute();
@@ -26,27 +27,42 @@ const router = useRouter();
 // Initialize application state
 onMounted(async () => {
   await store.init();
-  // Auto login customer as default if not logged in
-  if (!store.user.value) {
-    await store.switchUser('customer');
-  }
 });
 
 // Determine layout type based on route path
 const layoutType = computed(() => {
-  if (route.path === '/login') return 'login';
+  if (route.path === '/login' || route.path === '/register') return 'login';
   if (route.path.startsWith('/admin')) return 'admin';
-  if (route.path.startsWith('/profile')) return 'customer-profile';
+  if (route.path.startsWith('/profile') || route.path === '/wishlist' || route.path === '/orders') return 'customer-profile';
   return 'customer';
 });
 
 const currentUser = computed(() => store.user.value);
 const cartCount = computed(() => store.cartCount.value);
 const alert = computed(() => store.alert.value);
+const sidebarOpen = ref(false);
 
 const handleLogout = async () => {
   await store.logout();
   router.push('/login');
+};
+
+const toggleSidebar = () => {
+  sidebarOpen.value = !sidebarOpen.value;
+};
+
+const searchQuery = ref('');
+
+const handleSearch = () => {
+  if (searchQuery.value.trim()) {
+    router.push({ path: '/products', query: { search: searchQuery.value } });
+  }
+};
+
+const handleSearchKeyPress = (e: KeyboardEvent) => {
+  if (e.key === 'Enter') {
+    handleSearch();
+  }
 };
 
 const handleSwitchRole = async (role: 'admin' | 'customer') => {
@@ -80,76 +96,118 @@ const handleSwitchRole = async (role: 'admin' | 'customer') => {
             <span class="logo-light">Retail</span>
           </router-link>
           <nav class="customer-nav">
-            <span class="nav-item">Categories</span>
-            <span class="nav-item">Deals</span>
-            <span class="nav-item">New Arrivals</span>
-            <span class="nav-item">Support</span>
+            <router-link to="/products" class="nav-item">Shop</router-link>
+            <router-link to="/collection" class="nav-item">Collection</router-link>
+            <router-link to="/deals" class="nav-item">Deals</router-link>
           </nav>
         </div>
         <div class="header-right">
           <div class="search-bar-wrapper">
             <Search :size="16" class="search-icon" />
-            <input type="text" placeholder="Search products..." class="header-search-input" />
+            <input 
+              type="text" 
+              v-model="searchQuery"
+              @keypress="handleSearchKeyPress"
+              placeholder="Search products..." 
+              class="header-search-input" 
+            />
           </div>
-          <router-link to="/profile/wishlist" class="icon-btn-circle" title="Wishlist">
-            <Heart :size="20" :class="{ 'filled-heart': store.wishlist.value.length > 0 }" />
-          </router-link>
-          <router-link to="/profile/wishlist" class="icon-btn-circle" title="Profile">
-            <UserIcon :size="20" />
-          </router-link>
-          <router-link to="/cart" class="cart-btn">
-            <ShoppingCart :size="18" />
-            <span>Cart</span>
-            <span v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</span>
-          </router-link>
+          
+          <!-- Auth buttons for non-logged in users -->
+          <template v-if="!currentUser">
+            <router-link to="/login" class="auth-btn auth-btn-secondary">
+              Login
+            </router-link>
+            <router-link to="/register" class="auth-btn auth-btn-primary">
+              Register
+            </router-link>
+          </template>
+          
+          <!-- User buttons for logged in users -->
+          <template v-else>
+            <router-link to="/wishlist" class="icon-btn-circle" title="Wishlist">
+              <Heart :size="20" :class="{ 'filled-heart': store.wishlist.value.length > 0 }" />
+            </router-link>
+            <router-link to="/profile" class="icon-btn-circle" title="Profile">
+              <UserIcon :size="20" />
+            </router-link>
+            <router-link to="/cart" class="cart-btn">
+              <ShoppingCart :size="18" />
+              <span>Cart</span>
+              <span v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</span>
+            </router-link>
+            <button class="logout-btn" @click="handleLogout" title="Logout">
+              <LogOut :size="18" />
+            </button>
+          </template>
         </div>
       </div>
     </header>
 
     <!-- 2. SPLIT LAYOUT FOR CUSTOMER PROFILE & ADMIN -->
     <div v-if="layoutType === 'customer-profile' || layoutType === 'admin'" class="split-view">
+      <!-- Mobile Menu Toggle -->
+      <button v-if="layoutType === 'admin'" class="mobile-menu-toggle" @click="toggleSidebar">
+        <Menu :size="24" />
+      </button>
+
       <!-- SIDEBAR -->
-      <aside class="sidebar">
-        <!-- Sidebar Brand header (Only in Admin mode) -->
+      <aside :class="['sidebar', { open: sidebarOpen }]">
+        <!-- Sidebar Brand header -->
         <div class="sidebar-brand">
           <div class="brand-logo">
             <Sliders :size="18" />
           </div>
           <div class="brand-info">
-            <div class="brand-text">Admin Panel</div>
+            <div class="brand-text">{{ layoutType === 'admin' ? 'Admin Panel' : 'My Account' }}</div>
             <div class="brand-subtitle">Precision Retail System</div>
           </div>
         </div>
 
         <!-- Sidebar Navigation -->
         <nav class="sidebar-nav">
-          <router-link to="/admin/dashboard" class="sidebar-link" active-class="active">
-            <LayoutDashboard :size="18" />
-            <span>Dashboard</span>
-          </router-link>
-          <router-link to="/admin/products" class="sidebar-link" active-class="active">
-            <Package :size="18" />
-            <span>Products</span>
-          </router-link>
-          <div class="sidebar-link">
-            <Layers :size="18" />
-            <span>Categories</span>
-          </div>
-          <div class="sidebar-link">
-            <ShoppingBag :size="18" />
-            <span>Orders</span>
-          </div>
-          <div class="sidebar-link">
-            <Users :size="18" />
-            <span>Users</span>
-          </div>
+          <!-- Admin Navigation -->
+          <template v-if="layoutType === 'admin'">
+            <router-link to="/admin/dashboard" class="sidebar-link" active-class="active">
+              <LayoutDashboard :size="18" />
+              <span>Dashboard</span>
+            </router-link>
+            <router-link to="/admin/products" class="sidebar-link" active-class="active">
+              <Package :size="18" />
+              <span>Products</span>
+            </router-link>
+            <router-link to="/admin/categories" class="sidebar-link" active-class="active">
+              <Layers :size="18" />
+              <span>Categories</span>
+            </router-link>
+            <router-link to="/admin/orders" class="sidebar-link" active-class="active">
+              <ShoppingBag :size="18" />
+              <span>Orders</span>
+            </router-link>
+            <router-link to="/admin/users" class="sidebar-link" active-class="active">
+              <Users :size="18" />
+              <span>Users</span>
+            </router-link>
+          </template>
           
-          <!-- Show wishlist if in profile dashboard mode -->
-          <template v-if="layoutType === 'customer-profile'">
-            <div class="sidebar-section-title">My Account</div>
-            <router-link to="/profile/wishlist" class="sidebar-link" active-class="active">
+          <!-- Customer Profile Navigation -->
+          <template v-else>
+            <div class="sidebar-section-title">Account</div>
+            <router-link to="/profile" class="sidebar-link" active-class="active">
+              <UserIcon :size="18" />
+              <span>Profile</span>
+            </router-link>
+            <router-link to="/orders" class="sidebar-link" active-class="active">
+              <ShoppingBag :size="18" />
+              <span>Orders</span>
+            </router-link>
+            <router-link to="/wishlist" class="sidebar-link" active-class="active">
               <Heart :size="18" />
               <span>Wishlist</span>
+            </router-link>
+            <router-link to="/cart" class="sidebar-link" active-class="active">
+              <ShoppingCart :size="18" />
+              <span>Cart</span>
             </router-link>
           </template>
         </nav>
@@ -188,23 +246,6 @@ const handleSwitchRole = async (role: 'admin' | 'customer') => {
     <div v-else class="full-view">
       <router-view />
     </div>
-
-    <!-- FLOATING ROLE SWITCHER FOR DEMONSTRATION -->
-    <div class="demo-switcher">
-      <span class="demo-switcher-label">View Mode:</span>
-      <button 
-        :class="['demo-switcher-btn', { active: currentUser?.role === 'customer' }]" 
-        @click="handleSwitchRole('customer')"
-      >
-        Customer
-      </button>
-      <button 
-        :class="['demo-switcher-btn', { active: currentUser?.role === 'admin' }]" 
-        @click="handleSwitchRole('admin')"
-      >
-        Admin
-      </button>
-    </div>
   </div>
 </template>
 
@@ -212,8 +253,9 @@ const handleSwitchRole = async (role: 'admin' | 'customer') => {
 /* CSS overrides or custom page structure inside App.vue */
 .customer-header {
   height: 80px;
-  background-color: #0b0f19;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(5, 5, 5, 0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   position: sticky;
@@ -240,9 +282,13 @@ const handleSwitchRole = async (role: 'admin' | 'customer') => {
 .customer-logo {
   text-decoration: none;
   font-family: var(--font-display);
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: -0.03em;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .customer-logo .logo-bold {
@@ -255,24 +301,50 @@ const handleSwitchRole = async (role: 'admin' | 'customer') => {
 
 .customer-nav {
   display: flex;
-  gap: 24px;
+  gap: 32px;
 }
 
 .nav-item {
-  color: #9ca3af;
+  color: var(--text-secondary);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: color var(--transition-fast);
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  position: relative;
 }
 
 .nav-item:hover {
-  color: #ffffff;
+  color: var(--text-primary);
+}
+
+.nav-item::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--accent-gradient);
+  transition: width var(--transition-fast);
+}
+
+.nav-item:hover::after {
+  width: 100%;
+}
+
+.nav-item.router-link-active {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.nav-item.router-link-active::after {
+  width: 100%;
 }
 
 .search-bar-wrapper {
   position: relative;
-  width: 240px;
+  width: 280px;
 }
 
 .search-icon {
@@ -280,44 +352,52 @@ const handleSwitchRole = async (role: 'admin' | 'customer') => {
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #4b5563;
+  color: var(--text-tertiary);
+  transition: color var(--transition-fast);
 }
 
 .header-search-input {
   width: 100%;
-  background-color: #111827;
-  border: 1px solid #1f2937;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
   border-radius: 50px;
-  padding: 8px 16px 8px 36px;
-  color: #f9fafb;
+  padding: 10px 16px 10px 40px;
+  color: var(--text-primary);
   font-size: 0.85rem;
   transition: all var(--transition-fast);
 }
 
 .header-search-input:focus {
   outline: none;
-  border-color: #3b82f6;
-  width: 280px;
+  border-color: var(--accent-primary);
+  background: var(--bg-secondary);
+  box-shadow: var(--glow-primary);
+}
+
+.header-search-input:focus + .search-icon {
+  color: var(--accent-primary);
 }
 
 .icon-btn-circle {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
-  background-color: #111827;
-  border: 1px solid #1f2937;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
   cursor: pointer;
   transition: all var(--transition-fast);
   text-decoration: none;
 }
 
 .icon-btn-circle:hover {
-  color: #ffffff;
-  border-color: #3b82f6;
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+  background: var(--bg-secondary);
+  transform: translateY(-2px);
 }
 
 .filled-heart {
@@ -326,11 +406,11 @@ const handleSwitchRole = async (role: 'admin' | 'customer') => {
 }
 
 .cart-btn {
-  background-color: #2563eb;
+  background: var(--accent-gradient);
   color: #ffffff;
   border: none;
   border-radius: 50px;
-  padding: 8px 20px;
+  padding: 10px 24px;
   font-size: 0.9rem;
   font-weight: 600;
   display: flex;
@@ -340,23 +420,79 @@ const handleSwitchRole = async (role: 'admin' | 'customer') => {
   transition: all var(--transition-fast);
   text-decoration: none;
   position: relative;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
 
 .cart-btn:hover {
-  background-color: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
 .cart-badge {
-  background-color: #ffffff;
-  color: #2563eb;
-  font-size: 0.75rem;
+  background: #ffffff;
+  color: var(--accent-primary);
+  font-size: 0.7rem;
   font-weight: 800;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.auth-btn {
+  padding: 10px 24px;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.auth-btn-secondary {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.auth-btn-secondary:hover {
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+  background: var(--bg-tertiary);
+}
+
+.auth-btn-primary {
+  background: var(--accent-gradient);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.auth-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.logout-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.logout-btn:hover {
+  color: #ef4444;
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  transform: translateY(-2px);
 }
 
 /* Split View Structure */
@@ -385,5 +521,33 @@ const handleSwitchRole = async (role: 'admin' | 'customer') => {
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 101;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+}
+
+.mobile-menu-toggle:hover {
+  background-color: var(--bg-tertiary);
+}
+
+@media (max-width: 1024px) {
+  .mobile-menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 </style>

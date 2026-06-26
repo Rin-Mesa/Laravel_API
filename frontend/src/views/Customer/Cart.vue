@@ -89,7 +89,7 @@ const handleCheckout = async () => {
       }
       await store.fetchCart();
       store.setAlert('Order placed successfully! Thank you for shopping.', 'success');
-      router.push('/');
+      router.push('/checkout');
     }
   } catch (err: any) {
     store.setAlert(err.message || 'Failed to checkout', 'error');
@@ -132,8 +132,8 @@ const formatCurrency = (val: number) => {
       <ShoppingCart :size="48" class="cart-empty-icon" />
       <h3>Your shopping cart is empty</h3>
       <p>Fill it with our premium high-fidelity gadgets.</p>
-      <router-link to="/" class="btn btn-primary btn-sm">
-        Start Shopping
+      <router-link to="/products" class="btn btn-primary btn-sm">
+        Browse Products
       </router-link>
     </div>
 

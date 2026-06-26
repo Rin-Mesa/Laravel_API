@@ -3,22 +3,59 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { store } from '../../store';
 import { api } from "../../services/api";
-import { ShoppingBag } from 'lucide-vue-next';
+import { ShoppingBag, Check, Facebook, Chrome } from 'lucide-vue-next';
 
 const router = useRouter();
 const name = ref('');
 const email = ref('');
 const password = ref('');
 const passwordConfirm = ref('');
+const agreeTerms = ref(false);
 const loading = ref(false);
 const error = ref('');
+const errors = ref<Record<string, string>>({});
+
+const validateForm = () => {
+  errors.value = {};
+  
+  if (!name.value.trim()) {
+    errors.value.name = 'Full name is required';
+  } else if (name.value.trim().length < 2) {
+    errors.value.name = 'Name must be at least 2 characters';
+  }
+  
+  if (!email.value.trim()) {
+    errors.value.email = 'Email address is required';
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+    errors.value.email = 'Please enter a valid email address';
+  }
+  
+  if (!password.value) {
+    errors.value.password = 'Password is required';
+  } else if (password.value.length < 8) {
+    errors.value.password = 'Password must be at least 8 characters';
+  }
+  
+  if (!passwordConfirm.value) {
+    errors.value.passwordConfirm = 'Please confirm your password';
+  } else if (password.value !== passwordConfirm.value) {
+    errors.value.passwordConfirm = 'Passwords do not match';
+  }
+  
+  if (!agreeTerms.value) {
+    errors.value.agreeTerms = 'You must agree to the Terms and Conditions';
+  }
+  
+  return Object.keys(errors.value).length === 0;
+};
 
 const handleRegister = async () => {
   error.value = '';
-  if (password.value !== passwordConfirm.value) {
-    error.value = 'Passwords do not match.';
+  
+  if (!validateForm()) {
     return;
   }
+  
   loading.value = true;
   try {
     const res = await api.register({
@@ -28,7 +65,7 @@ const handleRegister = async () => {
       password_confirmation: passwordConfirm.value,
     });
     if (res?.success) {
-      store.setAlert('Account created! Please sign in.', 'success');
+      store.setAlert('Account created successfully! Please sign in.', 'success');
       router.push('/login');
     } else {
       error.value = res?.message || 'Registration failed.';
@@ -42,6 +79,10 @@ const handleRegister = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const handleSocialLogin = (provider: 'google' | 'facebook') => {
+  store.setAlert(`${provider.charAt(0).toUpperCase() + provider.slice(1)} login coming soon`, 'info');
 };
 </script>
 
@@ -60,31 +101,95 @@ const handleRegister = async () => {
       <form @submit.prevent="handleRegister" class="auth-form">
         <div class="form-group">
           <label class="form-label">Full Name</label>
-          <input v-model="name" type="text" class="form-input" placeholder="John Doe" required />
+          <input 
+            v-model="name" 
+            type="text" 
+            class="form-input" 
+            :class="{ 'input-error': errors.name }"
+            placeholder="John Doe" 
+            @input="errors.name = ''"
+          />
+          <span v-if="errors.name" class="field-error">{{ errors.name }}</span>
         </div>
         <div class="form-group">
           <label class="form-label">Email Address</label>
-          <input v-model="email" type="email" class="form-input" placeholder="you@example.com" required />
+          <input 
+            v-model="email" 
+            type="email" 
+            class="form-input" 
+            :class="{ 'input-error': errors.email }"
+            placeholder="you@example.com" 
+            @input="errors.email = ''"
+          />
+          <span v-if="errors.email" class="field-error">{{ errors.email }}</span>
         </div>
         <div class="form-group">
           <label class="form-label">Password</label>
-          <input v-model="password" type="password" class="form-input" placeholder="Min. 8 characters" required
-            minlength="8" />
+          <input 
+            v-model="password" 
+            type="password" 
+            class="form-input" 
+            :class="{ 'input-error': errors.password }"
+            placeholder="Min. 8 characters"
+            @input="errors.password = ''"
+          />
+          <span v-if="errors.password" class="field-error">{{ errors.password }}</span>
         </div>
         <div class="form-group">
           <label class="form-label">Confirm Password</label>
-          <input v-model="passwordConfirm" type="password" class="form-input" placeholder="Re-enter password"
-            required />
+          <input 
+            v-model="passwordConfirm" 
+            type="password" 
+            class="form-input" 
+            :class="{ 'input-error': errors.passwordConfirm }"
+            placeholder="Re-enter password"
+            @input="errors.passwordConfirm = ''"
+          />
+          <span v-if="errors.passwordConfirm" class="field-error">{{ errors.passwordConfirm }}</span>
         </div>
+
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input 
+              type="checkbox" 
+              v-model="agreeTerms" 
+              class="checkbox-input"
+              @change="errors.agreeTerms = ''"
+            />
+            <span class="checkbox-custom">
+              <Check :size="14" v-if="agreeTerms" />
+            </span>
+            <span class="checkbox-text">
+              I agree to the <a href="#" class="link">Terms and Conditions</a> and <a href="#" class="link">Privacy Policy</a>
+            </span>
+          </label>
+          <span v-if="errors.agreeTerms" class="field-error">{{ errors.agreeTerms }}</span>
+        </div>
+
         <button type="submit" class="btn btn-primary auth-submit-btn" :disabled="loading">
           <span v-if="loading" class="spinner-sm"></span>
           <span>{{ loading ? 'Creating account...' : 'Create Account' }}</span>
         </button>
       </form>
 
+      <div class="social-divider">
+        <span>Or continue with</span>
+      </div>
+
+      <div class="social-buttons">
+        <button type="button" class="social-btn google-btn" @click="handleSocialLogin('google')">
+          <Chrome :size="20" />
+          <span>Google</span>
+        </button>
+        <button type="button" class="social-btn facebook-btn" @click="handleSocialLogin('facebook')">
+          <Facebook :size="20" />
+          <span>Facebook</span>
+        </button>
+      </div>
+
       <p class="auth-switch">
         Already have an account?
-        <router-link to="/login" class="auth-link">Sign in</router-link>
+        <router-link to="/login" class="auth-link">Login here</router-link>
       </p>
     </div>
   </div>
@@ -173,6 +278,20 @@ const handleRegister = async () => {
   margin-bottom: 20px;
 }
 
+.field-error {
+  color: #fca5a5;
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
+.input-error {
+  border-color: #ef4444 !important;
+}
+
+.input-error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+}
+
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -258,5 +377,128 @@ const handleRegister = async () => {
 .auth-link:hover {
   color: #60a5fa;
   text-decoration: underline;
+}
+
+.checkbox-group {
+  gap: 8px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.checkbox-custom {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  color: white;
+}
+
+.checkbox-label:hover .checkbox-custom {
+  border-color: #3b82f6;
+}
+
+.checkbox-input:checked + .checkbox-custom {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.checkbox-text {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  line-height: 1.4;
+}
+
+.checkbox-text .link {
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.checkbox-text .link:hover {
+  text-decoration: underline;
+}
+
+.social-divider {
+  text-align: center;
+  margin: 24px 0 20px 0;
+  position: relative;
+}
+
+.social-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.08);
+  z-index: 1;
+}
+
+.social-divider span {
+  background-color: #111827;
+  padding: 0 16px;
+  color: #4b5563;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: relative;
+  z-index: 2;
+}
+
+.social-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f9fafb;
+}
+
+.social-btn:hover {
+  transform: translateY(-1px);
+}
+
+.google-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.facebook-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 </style>
