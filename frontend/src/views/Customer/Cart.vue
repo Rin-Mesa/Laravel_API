@@ -3,14 +3,14 @@ import { ref, onMounted, computed } from 'vue';
 import { store } from '../../store';
 import { api } from '../../services/api';
 import { useRouter } from 'vue-router';
-import { 
-  Minus, 
-  Plus, 
-  Trash2, 
-  ArrowLeft, 
-  Lock, 
-  Truck, 
-  Tag, 
+import {
+  Minus,
+  Plus,
+  Trash2,
+  ArrowLeft,
+  Lock,
+  Truck,
+  Tag,
   ShoppingCart,
   Check
 } from 'lucide-vue-next';
@@ -45,7 +45,7 @@ const total = computed(() => subtotal.value + tax.value - promoDiscount.value);
 const handleQuantityChange = async (cartItem: any, change: number) => {
   const newQty = cartItem.quantity + change;
   if (newQty < 1) return;
-  
+
   loading.value = true;
   try {
     await store.updateCartQuantity(cartItem.id, newQty);
@@ -73,35 +73,17 @@ const handleApplyPromo = () => {
   }
 };
 
-const handleCheckout = async () => {
+const handleCheckout = () => {
   if (cart.value.length === 0) return;
-  loading.value = true;
-  try {
-    const items = cart.value.map(item => ({
-      product_id: item.product_id,
-      quantity: item.quantity,
-    }));
-    const res = await api.createOrder(items);
-    if (res.success) {
-      // Clear cart items
-      for (const item of cart.value) {
-        await api.removeFromCart(item.id);
-      }
-      await store.fetchCart();
-      store.setAlert('Order placed successfully! Thank you for shopping.', 'success');
-      router.push('/checkout');
-    }
-  } catch (err: any) {
-    store.setAlert(err.message || 'Failed to checkout', 'error');
-  } finally {
-    loading.value = false;
-  }
+  router.push('/checkout');
 };
 
 // Recommended items matching the wireframe: Rugged Case, Cable, Kit, Stand
 const recommendedSkus = ['ACC-RC-V2', 'ACC-BC-06', 'ACC-SC-PRO', 'ACC-AC-01'];
 const recommendedProducts = computed(() => {
-  return store.products.value.filter(p => recommendedSkus.includes(p.sku));
+  const products = store.products.value;
+  if (!Array.isArray(products)) return [];
+  return products.filter((p) => recommendedSkus.includes(p.sku));
 });
 
 const handleAddRecommended = async (productId: number) => {
@@ -144,13 +126,10 @@ const formatCurrency = (val: number) => {
         <div class="cart-items-list">
           <div v-for="item in cart" :key="item.id" class="card cart-item-card">
             <div class="item-img-box">
-              <img 
-                :src="item.product?.image_url" 
-                :alt="item.product?.name" 
-                @error="($event.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=256&auto=format&fit=crop'"
-              />
+              <img :src="item.product?.image_url" :alt="item.product?.name"
+                @error="($event.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=256&auto=format&fit=crop'" />
             </div>
-            
+
             <div class="item-details">
               <div class="item-info">
                 <h4>{{ item.product?.name }}</h4>
@@ -165,7 +144,8 @@ const formatCurrency = (val: number) => {
 
               <!-- Quantity selector -->
               <div class="quantity-selector">
-                <button class="qty-btn" @click="handleQuantityChange(item, -1)" :disabled="item.quantity <= 1 || loading">
+                <button class="qty-btn" @click="handleQuantityChange(item, -1)"
+                  :disabled="item.quantity <= 1 || loading">
                   <Minus :size="12" />
                 </button>
                 <span class="qty-val">{{ item.quantity }}</span>
@@ -193,7 +173,7 @@ const formatCurrency = (val: number) => {
       <div class="summary-column">
         <div class="card summary-card">
           <h3>Order Summary</h3>
-          
+
           <div class="summary-row">
             <span>Subtotal</span>
             <span>{{ formatCurrency(subtotal) }}</span>
@@ -225,7 +205,7 @@ const formatCurrency = (val: number) => {
             <Lock :size="14" />
             Proceed to Checkout
           </button>
-          
+
           <div class="free-shipping-bar">
             <Truck :size="14" />
             <span>Free shipping on orders over $100.</span>
@@ -248,13 +228,8 @@ const formatCurrency = (val: number) => {
         <div class="card promo-card">
           <label>Promo Code</label>
           <div class="promo-form">
-            <input 
-              type="text" 
-              placeholder="Enter code (e.g. PRECISION10)" 
-              class="form-input promo-input"
-              v-model="promoCode"
-              :disabled="promoApplied"
-            />
+            <input type="text" placeholder="Enter code (e.g. PRECISION10)" class="form-input promo-input"
+              v-model="promoCode" :disabled="promoApplied" />
             <button class="btn btn-secondary promo-btn-apply" @click="handleApplyPromo" :disabled="promoApplied">
               Apply
             </button>
@@ -269,16 +244,12 @@ const formatCurrency = (val: number) => {
     <!-- RECOMMENDED ITEMS SECTION -->
     <section class="recommended-section">
       <h3 class="recommended-title">Recommended for You</h3>
-      
+
       <div class="recommended-grid">
         <div v-for="product in recommendedProducts" :key="product.id" class="card recommended-card">
-          <img 
-            :src="product.image_url" 
-            :alt="product.name" 
-            class="rec-thumb"
-            @error="($event.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=256&auto=format&fit=crop'"
-          />
-          
+          <img :src="product.image_url" :alt="product.name" class="rec-thumb"
+            @error="($event.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=256&auto=format&fit=crop'" />
+
           <div class="rec-info">
             <h4>{{ product.name }}</h4>
             <span class="rec-price">{{ formatCurrency(product.price) }}</span>

@@ -51,11 +51,12 @@ const validateForm = () => {
 
 const handleRegister = async () => {
   error.value = '';
-  
+  errors.value = {};
+
   if (!validateForm()) {
     return;
   }
-  
+
   loading.value = true;
   try {
     const res = await api.register({
@@ -65,17 +66,29 @@ const handleRegister = async () => {
       password_confirmation: passwordConfirm.value,
     });
     if (res?.success) {
-      store.setAlert('Account created successfully! Please sign in.', 'success');
-      router.push('/login');
+      if (res.token) {
+        localStorage.setItem('precision_token', res.token);
+        localStorage.setItem('precision_user', JSON.stringify(res.user));
+      }
+      store.setAlert('Account created successfully! Welcome to the shop.', 'success');
+      router.push('/');
     } else {
       error.value = res?.message || 'Registration failed.';
     }
   } catch (e: any) {
     const data = e?.response?.data;
-    const firstField = data?.errors ? Object.keys(data.errors)[0] : undefined;
-    const firstError = firstField ? data?.errors?.[firstField]?.[0] : undefined;
 
-    error.value = data?.message || firstError || 'Registration failed. Please try again.';
+    if (data?.errors) {
+      for (const [field, msgs] of Object.entries(data.errors)) {
+        const key = field === 'password_confirmation' ? 'passwordConfirm' : field;
+        const msg = (msgs as string[])[0];
+        if (key && msg) errors.value[key] = msg;
+      }
+      const firstField = Object.keys(data.errors)[0];
+      if (firstField) error.value = data.errors[firstField][0];
+    } else {
+      error.value = data?.message || 'Registration failed. Please try again.';
+    }
   } finally {
     loading.value = false;
   }

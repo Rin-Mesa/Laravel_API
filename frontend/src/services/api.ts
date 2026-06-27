@@ -178,8 +178,14 @@ export const api = {
     return this.get("/orders");
   },
 
-  async createOrder(items: Array<{ product_id: number; quantity: number }>) {
-    return this.post("/orders", { items });
+  async createOrder(data: {
+    customer_name: string;
+    phone: string;
+    email?: string | null;
+    address: string;
+    items: Array<{ product_id: number; quantity: number }>;
+  }) {
+    return this.post("/orders", data);
   },
 
   async updateOrderStatus(orderId: number, status: string) {

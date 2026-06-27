@@ -3,11 +3,11 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { store } from '../../store';
 import { api } from '../../services/api';
-import { 
-  Lock, 
-  Truck, 
-  Shield, 
-  CreditCard, 
+import {
+  Lock,
+  Truck,
+  Shield,
+  CreditCard,
   MapPin,
   Phone,
   Mail,
@@ -29,13 +29,13 @@ const formData = ref({
   state: '',
   zip_code: '',
   country: 'United States',
-  
+
   // Payment Info
   card_number: '',
   card_name: '',
   card_expiry: '',
   card_cvc: '',
-  
+
   // Additional
   save_address: false,
   same_as_shipping: true,
@@ -60,53 +60,53 @@ onMounted(() => {
 
 const validateForm = () => {
   errors.value = {};
-  
+
   if (!formData.value.full_name.trim()) {
     errors.value.full_name = 'Full name is required';
   }
-  
+
   if (!formData.value.email.trim()) {
     errors.value.email = 'Email is required';
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.value.email)) {
     errors.value.email = 'Please enter a valid email';
   }
-  
+
   if (!formData.value.phone.trim()) {
     errors.value.phone = 'Phone number is required';
   }
-  
+
   if (!formData.value.address.trim()) {
     errors.value.address = 'Address is required';
   }
-  
+
   if (!formData.value.city.trim()) {
     errors.value.city = 'City is required';
   }
-  
+
   if (!formData.value.zip_code.trim()) {
     errors.value.zip_code = 'ZIP code is required';
   }
-  
+
   if (!formData.value.card_number.trim()) {
     errors.value.card_number = 'Card number is required';
   } else if (formData.value.card_number.length < 16) {
     errors.value.card_number = 'Invalid card number';
   }
-  
+
   if (!formData.value.card_name.trim()) {
     errors.value.card_name = 'Name on card is required';
   }
-  
+
   if (!formData.value.card_expiry.trim()) {
     errors.value.card_expiry = 'Expiry date is required';
   }
-  
+
   if (!formData.value.card_cvc.trim()) {
     errors.value.card_cvc = 'CVC is required';
   } else if (formData.value.card_cvc.length < 3) {
     errors.value.card_cvc = 'Invalid CVC';
   }
-  
+
   return Object.keys(errors.value).length === 0;
 };
 
@@ -116,26 +116,33 @@ const handleCheckout = async () => {
     router.push('/');
     return;
   }
-  
+
   if (!validateForm()) {
     return;
   }
-  
+
   processing.value = true;
   try {
     const items = cart.value.map(item => ({
       product_id: item.product_id,
       quantity: item.quantity,
     }));
-    
-    const res = await api.createOrder(items);
+
+    // Backend expects: customer_name, phone, email, address, items
+    const res = await api.post('/orders', {
+      customer_name: formData.value.full_name,
+      phone: formData.value.phone,
+      email: formData.value.email || null,
+      address: formData.value.address,
+      items,
+    });
     if (res.success) {
       // Clear cart
       for (const item of cart.value) {
         await api.removeFromCart(item.id);
       }
       await store.fetchCart();
-      
+
       store.setAlert('Order placed successfully! Thank you for shopping.', 'success');
       router.push('/');
     }
@@ -204,82 +211,48 @@ const formatExpiry = (value: string) => {
           <div class="form-grid">
             <div class="form-group">
               <label>Full Name</label>
-              <input 
-                type="text" 
-                v-model="formData.full_name"
-                :class="{ 'input-error': errors.full_name }"
-                @input="errors.full_name = ''"
-                placeholder="John Doe"
-              />
+              <input type="text" v-model="formData.full_name" :class="{ 'input-error': errors.full_name }"
+                @input="errors.full_name = ''" placeholder="John Doe" />
               <span v-if="errors.full_name" class="error-text">{{ errors.full_name }}</span>
             </div>
 
             <div class="form-group">
               <label>Email</label>
-              <input 
-                type="email" 
-                v-model="formData.email"
-                :class="{ 'input-error': errors.email }"
-                @input="errors.email = ''"
-                placeholder="john@example.com"
-              />
+              <input type="email" v-model="formData.email" :class="{ 'input-error': errors.email }"
+                @input="errors.email = ''" placeholder="john@example.com" />
               <span v-if="errors.email" class="error-text">{{ errors.email }}</span>
             </div>
 
             <div class="form-group">
               <label>Phone</label>
-              <input 
-                type="tel" 
-                v-model="formData.phone"
-                :class="{ 'input-error': errors.phone }"
-                @input="errors.phone = ''"
-                placeholder="+1 (555) 000-0000"
-              />
+              <input type="tel" v-model="formData.phone" :class="{ 'input-error': errors.phone }"
+                @input="errors.phone = ''" placeholder="+1 (555) 000-0000" />
               <span v-if="errors.phone" class="error-text">{{ errors.phone }}</span>
             </div>
 
             <div class="form-group full-width">
               <label>Address</label>
-              <input 
-                type="text" 
-                v-model="formData.address"
-                :class="{ 'input-error': errors.address }"
-                @input="errors.address = ''"
-                placeholder="123 Main Street"
-              />
+              <input type="text" v-model="formData.address" :class="{ 'input-error': errors.address }"
+                @input="errors.address = ''" placeholder="123 Main Street" />
               <span v-if="errors.address" class="error-text">{{ errors.address }}</span>
             </div>
 
             <div class="form-group">
               <label>City</label>
-              <input 
-                type="text" 
-                v-model="formData.city"
-                :class="{ 'input-error': errors.city }"
-                @input="errors.city = ''"
-                placeholder="New York"
-              />
+              <input type="text" v-model="formData.city" :class="{ 'input-error': errors.city }"
+                @input="errors.city = ''" placeholder="New York" />
               <span v-if="errors.city" class="error-text">{{ errors.city }}</span>
             </div>
 
             <div class="form-group">
               <label>State</label>
-              <input 
-                type="text" 
-                v-model="formData.state"
-                placeholder="NY"
-              />
+              <input type="text" v-model="formData.state" placeholder="NY" />
             </div>
 
             <div class="form-group">
               <label>ZIP Code</label>
-              <input 
-                type="text" 
-                v-model="formData.zip_code"
-                :class="{ 'input-error': errors.zip_code }"
-                @input="errors.zip_code = ''"
-                placeholder="10001"
-              />
+              <input type="text" v-model="formData.zip_code" :class="{ 'input-error': errors.zip_code }"
+                @input="errors.zip_code = ''" placeholder="10001" />
               <span v-if="errors.zip_code" class="error-text">{{ errors.zip_code }}</span>
             </div>
 
@@ -309,52 +282,31 @@ const formatExpiry = (value: string) => {
           <div class="form-grid">
             <div class="form-group full-width">
               <label>Card Number</label>
-              <input 
-                type="text" 
-                v-model="formData.card_number"
-                :class="{ 'input-error': errors.card_number }"
+              <input type="text" v-model="formData.card_number" :class="{ 'input-error': errors.card_number }"
                 @input="formData.card_number = formatCardNumber(formData.card_number); errors.card_number = ''"
-                placeholder="1234 5678 9012 3456"
-                maxlength="19"
-              />
+                placeholder="1234 5678 9012 3456" maxlength="19" />
               <span v-if="errors.card_number" class="error-text">{{ errors.card_number }}</span>
             </div>
 
             <div class="form-group full-width">
               <label>Name on Card</label>
-              <input 
-                type="text" 
-                v-model="formData.card_name"
-                :class="{ 'input-error': errors.card_name }"
-                @input="errors.card_name = ''"
-                placeholder="JOHN DOE"
-              />
+              <input type="text" v-model="formData.card_name" :class="{ 'input-error': errors.card_name }"
+                @input="errors.card_name = ''" placeholder="JOHN DOE" />
               <span v-if="errors.card_name" class="error-text">{{ errors.card_name }}</span>
             </div>
 
             <div class="form-group">
               <label>Expiry Date</label>
-              <input 
-                type="text" 
-                v-model="formData.card_expiry"
-                :class="{ 'input-error': errors.card_expiry }"
+              <input type="text" v-model="formData.card_expiry" :class="{ 'input-error': errors.card_expiry }"
                 @input="formData.card_expiry = formatExpiry(formData.card_expiry); errors.card_expiry = ''"
-                placeholder="MM/YY"
-                maxlength="5"
-              />
+                placeholder="MM/YY" maxlength="5" />
               <span v-if="errors.card_expiry" class="error-text">{{ errors.card_expiry }}</span>
             </div>
 
             <div class="form-group">
               <label>CVC</label>
-              <input 
-                type="text" 
-                v-model="formData.card_cvc"
-                :class="{ 'input-error': errors.card_cvc }"
-                @input="errors.card_cvc = ''"
-                placeholder="123"
-                maxlength="4"
-              />
+              <input type="text" v-model="formData.card_cvc" :class="{ 'input-error': errors.card_cvc }"
+                @input="errors.card_cvc = ''" placeholder="123" maxlength="4" />
               <span v-if="errors.card_cvc" class="error-text">{{ errors.card_cvc }}</span>
             </div>
           </div>
@@ -373,12 +325,8 @@ const formatExpiry = (value: string) => {
 
           <div class="order-items">
             <div v-for="item in cart" :key="item.id" class="order-item">
-              <img 
-                :src="item.product?.image_url" 
-                :alt="item.product?.name"
-                class="order-item-img"
-                @error="($event.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=100&auto=format&fit=crop'"
-              />
+              <img :src="item.product?.image_url" :alt="item.product?.name" class="order-item-img"
+                @error="($event.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=100&auto=format&fit=crop'" />
               <div class="order-item-info">
                 <h4>{{ item.product?.name }}</h4>
                 <span class="order-item-qty">Qty: {{ item.quantity }}</span>
@@ -411,11 +359,7 @@ const formatExpiry = (value: string) => {
             <span>{{ formatCurrency(total) }}</span>
           </div>
 
-          <button 
-            class="btn btn-primary checkout-btn" 
-            @click="handleCheckout"
-            :disabled="processing"
-          >
+          <button class="btn btn-primary checkout-btn" @click="handleCheckout" :disabled="processing">
             <Lock :size="16" v-if="!processing" />
             <span v-if="processing">Processing...</span>
             <span v-else>Place Order</span>
