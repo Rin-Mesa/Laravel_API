@@ -137,11 +137,15 @@ const handleCheckout = async () => {
       items,
     });
     if (res.success) {
-      // Clear cart
+      // Clear cart (use store actions so state + error handling stays consistent)
       for (const item of cart.value) {
-        await api.removeFromCart(item.id);
+        if (!item?.id) {
+          throw new Error('Cart item id missing; cannot remove item from cart.');
+        }
+        await store.removeFromCart(item.id);
       }
       await store.fetchCart();
+
 
       store.setAlert('Order placed successfully! Thank you for shopping.', 'success');
       router.push('/');

@@ -91,7 +91,7 @@ export const api = {
   },
 
   async changePassword(data: any) {
-    return this.put("/change-password", data);
+    return this.post("/change-password", data);
   },
 
   // Categories

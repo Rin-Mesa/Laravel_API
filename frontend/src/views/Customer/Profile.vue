@@ -83,12 +83,6 @@ const handleSaveProfile = async () => {
     const res = await api.updateProfile({
       name: profileData.value.name,
       email: profileData.value.email,
-      phone: profileData.value.phone,
-      address: profileData.value.address,
-      city: profileData.value.city,
-      state: profileData.value.state,
-      zip_code: profileData.value.zip_code,
-      country: profileData.value.country,
     });
     
     if (res.success) {
@@ -133,8 +127,8 @@ const handleChangePassword = async () => {
   try {
     const res = await api.changePassword({
       current_password: passwordData.value.current_password,
-      new_password: passwordData.value.new_password,
-      new_password_confirmation: passwordData.value.confirm_password,
+      password: passwordData.value.new_password,
+      password_confirmation: passwordData.value.confirm_password,
     });
     
     if (res.success) {

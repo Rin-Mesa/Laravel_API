@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { store } from '../../store';
 import { api } from '../../services/api';
@@ -27,9 +27,34 @@ const viewMode = ref<'grid' | 'list'>('grid');
 const fetchProducts = async () => {
   loading.value = true;
   try {
-    const res = await api.getProducts();
-    if (res.success) {
-      products.value = Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
+    const params: Record<string, any> = {};
+    
+    // Add search parameter
+    if (searchQuery.value) {
+      params.search = searchQuery.value;
+    }
+    
+    // Add category filter
+    if (selectedCategory.value !== 'all') {
+      params.category_id = Number(selectedCategory.value);
+    }
+    
+    // Add price range filters
+    if (priceRange.value === 'under-50') {
+      params.max_price = 50;
+    } else if (priceRange.value === '50-100') {
+      params.min_price = 50;
+      params.max_price = 100;
+    } else if (priceRange.value === '100-200') {
+      params.min_price = 100;
+      params.max_price = 200;
+    } else if (priceRange.value === 'over-200') {
+      params.min_price = 200;
+    }
+    
+    const res = await api.http.get('/products', { params });
+    if (res.data.success) {
+      products.value = Array.isArray(res.data.data) ? res.data.data : (res.data.data?.items ?? []);
     }
   } catch (e) {
     console.error('Failed to load products', e);
@@ -58,36 +83,15 @@ onMounted(async () => {
   }
 });
 
+// Watch for filter changes and refetch products
+watch([searchQuery, selectedCategory, priceRange], () => {
+  fetchProducts();
+});
+
 const filteredProducts = computed(() => {
   let filtered = [...products.value];
 
-  // Search filter
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter(p => 
-      p.name?.toLowerCase().includes(query) ||
-      p.description?.toLowerCase().includes(query) ||
-      p.sku?.toLowerCase().includes(query)
-    );
-  }
-
-  // Category filter
-  if (selectedCategory.value !== 'all') {
-    filtered = filtered.filter(p => p.category_id === Number(selectedCategory.value));
-  }
-
-  // Price filter
-  if (priceRange.value === 'under-50') {
-    filtered = filtered.filter(p => p.price < 50);
-  } else if (priceRange.value === '50-100') {
-    filtered = filtered.filter(p => p.price >= 50 && p.price <= 100);
-  } else if (priceRange.value === '100-200') {
-    filtered = filtered.filter(p => p.price >= 100 && p.price <= 200);
-  } else if (priceRange.value === 'over-200') {
-    filtered = filtered.filter(p => p.price > 200);
-  }
-
-  // Sort
+  // Sort (client-side since API doesn't support sorting)
   if (sortBy.value === 'price-low') {
     filtered.sort((a, b) => a.price - b.price);
   } else if (sortBy.value === 'price-high') {
