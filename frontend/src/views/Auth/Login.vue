@@ -2,60 +2,33 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { store } from '../../store';
-import { Sliders, Shield, User as UserIcon, Facebook, Chrome } from 'lucide-vue-next';
+import { Eye, EyeOff } from 'lucide-vue-next';
 
 const router = useRouter();
 const email = ref('');
 const password = ref('');
 const rememberMe = ref(false);
+const showPassword = ref(false);
 const error = ref('');
-const errors = ref<Record<string, string>>({});
 const loading = ref(false);
 
 onMounted(() => {
-  // If already logged in, redirect
   if (store.user.value) {
     redirectBasedOnRole(store.user.value.role);
   }
 });
 
 const redirectBasedOnRole = (role: string) => {
-  if (role === 'admin') {
-    router.push('/admin/dashboard');
-  } else {
-    router.push('/');
-  }
-};
-
-const validateForm = () => {
-  errors.value = {};
-  
-  if (!email.value.trim()) {
-    errors.value.email = 'Email address is required';
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
-    errors.value.email = 'Please enter a valid email address';
-  }
-  
-  if (!password.value) {
-    errors.value.password = 'Password is required';
-  }
-  
-  return Object.keys(errors.value).length === 0;
+  if (role === 'admin') router.push('/admin/dashboard');
+  else router.push('/');
 };
 
 const handleLogin = async () => {
   error.value = '';
-  
-  if (!validateForm()) {
-    return;
-  }
-  
   loading.value = true;
   try {
     const res = await store.login({ email: email.value, password: password.value });
-    if (res.success) {
-      redirectBasedOnRole(res.user.role);
-    }
+    if (res.success) redirectBasedOnRole(res.user.role);
   } catch (err: any) {
     error.value = err.message || 'Invalid email or password.';
   } finally {
@@ -63,449 +36,139 @@ const handleLogin = async () => {
   }
 };
 
-const quickConnect = async (role: 'admin' | 'customer') => {
-  error.value = '';
-  loading.value = true;
-  const targetEmail = role === 'admin' ? 'admin@precision.io' : 'alex@precision.io';
-  try {
-    const res = await store.login({ email: targetEmail, password: 'password' });
-    if (res.success) {
-      redirectBasedOnRole(res.user.role);
-    }
-  } catch (err: any) {
-    error.value = 'Failed to connect. Make sure your database is seeded.';
-  } finally {
-    loading.value = false;
-  }
-};
-
-const handleSocialLogin = (provider: 'google' | 'facebook') => {
+const handleSocialLogin = (provider: 'google' | 'apple') => {
   store.setAlert(`${provider.charAt(0).toUpperCase() + provider.slice(1)} login coming soon`, 'info');
 };
 </script>
 
 <template>
-  <div class="login-wrapper">
-    <div class="login-background"></div>
-    <div class="login-card">
-      <div class="login-header">
-        <div class="logo">
-          <Sliders :size="24" />
+  <main class="flex-1 w-full flex items-center justify-center bg-primary-50 p-4 md:p-10 min-h-[calc(100vh-80px)]">
+    <div
+      class="w-full max-w-5xl bg-white rounded-2xl shadow-lg border border-neutral-100 overflow-hidden flex flex-col md:flex-row animate-fade-in-up">
+
+      <!-- ── Left Branding Panel ── -->
+      <div class="md:w-5/12 relative bg-primary-600 p-10 flex flex-col justify-between overflow-hidden min-h-[360px]">
+        <!-- Decorative circles -->
+        <div class="absolute -top-16 -left-16 w-64 h-64 bg-primary-500/40 rounded-full"></div>
+        <div class="absolute -bottom-20 -right-20 w-72 h-72 bg-primary-700/50 rounded-full"></div>
+        <!-- Photo overlay -->
+        <div
+          class="absolute inset-0 bg-[url('https://i.pinimg.com/1200x/f4/5e/31/f45e311ae38c698b77b641b6237992a4.jpg')] bg-cover bg-center opacity-10">
         </div>
-        <h1>Precision Retail</h1>
-        <p>Enterprise Commerce Management Suite</p>
+
+        <!-- Top badge -->
+        <div class="relative z-10">
+          <span class="label-neutral font-mono text-[10px]">INDIGO E-COMMERCE</span>
+        </div>
+
+        <!-- Bottom copy -->
+        <div class="relative z-10 mt-auto">
+          <h1 class="text-3xl md:text-4xl font-bold text-white leading-snug mb-3">
+            Elevate Your<br>Experience
+          </h1>
+          <p class="text-primary-200 text-sm leading-relaxed">
+            Join the Indigo community for exclusive access to premium collections and personalized shopping.
+          </p>
+          <!-- Feature pills -->
+          <div class="flex flex-wrap gap-2 mt-6">
+            <span class="bg-white/15 text-white text-xs font-mono px-3 py-1 rounded-full border border-white/20">Free
+              Shipping</span>
+            <span class="bg-white/15 text-white text-xs font-mono px-3 py-1 rounded-full border border-white/20">Easy
+              Returns</span>
+            <span class="bg-secondary-500/80 text-white text-xs font-mono px-3 py-1 rounded-full">10k+ Products</span>
+          </div>
+        </div>
       </div>
 
-      <form @submit.prevent="handleLogin" class="login-form">
-        <div v-if="error" class="login-error">
-          {{ error }}
+      <!-- ── Right Form Panel ── -->
+      <div class="md:w-7/12 p-8 md:p-12 flex flex-col justify-center">
+
+        <div class="mb-8">
+          <p class="font-mono text-xs text-neutral-400 tracking-widest uppercase mb-1">Step 1 of 1</p>
+          <h2 class="text-2xl font-bold text-neutral-900 mb-1">Welcome Back</h2>
+          <p class="text-neutral-500 text-sm">Sign in to manage your orders and preferences.</p>
         </div>
 
-        <div class="form-group">
-          <label for="email">Email Address</label>
-          <input 
-            id="email"
-            type="email" 
-            v-model="email" 
-            placeholder="admin@precision.io" 
-            class="form-input" 
-            :class="{ 'input-error': errors.email }"
-            @input="errors.email = ''"
-          />
-          <span v-if="errors.email" class="field-error">{{ errors.email }}</span>
+        <!-- Social Buttons -->
+        <div class="grid grid-cols-2 gap-3 mb-6">
+          <button type="button" @click="handleSocialLogin('google')"
+            class="btn-secondary gap-2 py-2.5 text-xs justify-center">
+            <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-4 h-4" alt="Google" />
+            Continue with Google
+          </button>
+          <button type="button" @click="handleSocialLogin('apple')"
+            class="btn-inverted gap-2 py-2.5 text-xs justify-center">
+            <img src="https://www.svgrepo.com/show/511330/apple-173.svg" class="w-4 h-4 invert" alt="Apple" />
+            Continue with Apple
+          </button>
         </div>
 
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input 
-            id="password"
-            type="password" 
-            v-model="password" 
-            placeholder="••••••••" 
-            class="form-input" 
-            :class="{ 'input-error': errors.password }"
-            @input="errors.password = ''"
-          />
-          <span v-if="errors.password" class="field-error">{{ errors.password }}</span>
+        <!-- Divider -->
+        <div class="flex items-center gap-3 mb-6">
+          <div class="flex-1 h-px bg-neutral-200"></div>
+          <span class="font-mono text-[10px] font-semibold text-neutral-400 tracking-widest uppercase">Or with
+            email</span>
+          <div class="flex-1 h-px bg-neutral-200"></div>
         </div>
 
-        <div class="form-options">
-          <label class="remember-label">
-            <input type="checkbox" v-model="rememberMe" class="checkbox-input" />
-            <span class="checkbox-text">Remember me</span>
+        <!-- Form -->
+        <form @submit.prevent="handleLogin" class="flex flex-col gap-4">
+          <!-- Error -->
+          <div v-if="error"
+            class="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-lg font-medium">
+            {{ error }}
+          </div>
+
+          <!-- Email -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-semibold text-neutral-600 uppercase tracking-wider font-mono">Email
+              Address</label>
+            <input type="email" v-model="email" placeholder="name@example.com" class="input-field" required />
+          </div>
+
+          <!-- Password -->
+          <div class="flex flex-col gap-1.5">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-semibold text-neutral-600 uppercase tracking-wider font-mono">Password</label>
+              <a href="#" class="text-xs font-semibold text-primary-600 hover:text-primary-700">Forgot password?</a>
+            </div>
+            <div class="relative">
+              <input :type="showPassword ? 'text' : 'password'" v-model="password" placeholder="••••••••"
+                class="input-field pr-10" required />
+              <button type="button" @click="showPassword = !showPassword"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 transition-colors">
+                <EyeOff v-if="showPassword" :size="16" />
+                <Eye v-else :size="16" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Remember me -->
+          <label class="flex items-center gap-2.5 cursor-pointer group">
+            <input type="checkbox" id="remember" v-model="rememberMe"
+              class="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500" />
+            <span class="text-sm text-neutral-600 group-hover:text-neutral-900 transition-colors">Remember me for 30
+              days</span>
           </label>
-          <a href="#" class="forgot-link">Forgot password?</a>
+
+          <!-- Submit -->
+          <button type="submit" class="btn-primary w-full py-3 mt-2 text-sm" :disabled="loading">
+            <span v-if="loading"
+              class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            {{ loading ? 'Signing in...' : 'Sign In to Account' }}
+          </button>
+        </form>
+
+        <!-- Footer -->
+        <div class="mt-6 pt-6 border-t border-neutral-100 text-center">
+          <p class="text-sm text-neutral-500">
+            Don't have an account?
+            <router-link to="/register" class="font-semibold text-primary-600 hover:text-primary-700 ml-1">Create an
+              account →</router-link>
+          </p>
         </div>
-
-        <button type="submit" class="btn btn-primary btn-block" :disabled="loading">
-          {{ loading ? 'Authenticating...' : 'Sign In' }}
-        </button>
-      </form>
-
-      <div class="social-divider">
-        <span>Or continue with</span>
       </div>
 
-      <div class="social-buttons">
-        <button type="button" class="social-btn google-btn" @click="handleSocialLogin('google')">
-          <Chrome :size="20" />
-          <span>Google</span>
-        </button>
-        <button type="button" class="social-btn facebook-btn" @click="handleSocialLogin('facebook')">
-          <Facebook :size="20" />
-          <span>Facebook</span>
-        </button>
-      </div>
-
-      <div class="login-divider">
-        <span>Quick Connect Demo Accounts</span>
-      </div>
-      
-      <p class="auth-switch">
-        Don't have an account?
-        <router-link to="/register" class="auth-link">Create Account</router-link>
-      </p>
     </div>
-  </div>
+  </main>
 </template>
-
-<style scoped>
-.login-wrapper {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-  background-color: #05070c;
-  font-family: var(--font-body);
-}
-
-.login-background {
-  position: absolute;
-  top: -20%;
-  left: -20%;
-  width: 140%;
-  height: 140%;
-  background: radial-gradient(circle, rgba(37, 99, 235, 0.12) 0%, rgba(0, 0, 0, 0) 60%),
-              radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.08) 0%, rgba(0, 0, 0, 0) 50%);
-  filter: blur(80px);
-  z-index: 1;
-}
-
-.login-card {
-  width: 440px;
-  background: rgba(17, 24, 39, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-xl);
-  padding: 48px;
-  backdrop-filter: blur(20px);
-  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.5);
-  z-index: 2;
-  animation: fadeInUp var(--transition-slow);
-}
-
-.login-header {
-  text-align: center;
-  margin-bottom: 32px;
-}
-
-.logo {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  border-radius: var(--radius-md);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  margin-bottom: 16px;
-  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
-}
-
-.login-header h1 {
-  font-family: var(--font-display);
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: white;
-  margin-bottom: 6px;
-}
-
-.login-header p {
-  font-size: 0.85rem;
-  color: #9ca3af;
-}
-
-.login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.login-error {
-  background-color: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  color: #f87171;
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
-  font-size: 0.85rem;
-  text-align: center;
-}
-
-.field-error {
-  color: #f87171;
-  font-size: 0.75rem;
-  margin-top: 4px;
-}
-
-.input-error {
-  border-color: #ef4444 !important;
-}
-
-.input-error:focus {
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-group label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #9ca3af;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.form-input {
-  background-color: #0b0f19;
-  border: 1px solid #1f2937;
-  color: white;
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
-  font-size: 0.95rem;
-  transition: all var(--transition-fast);
-}
-
-.form-input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-}
-
-.btn-block {
-  width: 100%;
-  padding: 12px;
-  font-size: 0.95rem;
-}
-
-.form-options {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 8px;
-}
-
-.remember-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-  font-size: 0.85rem;
-  color: #9ca3af;
-}
-
-.checkbox-input {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: #3b82f6;
-}
-
-.forgot-link {
-  font-size: 0.85rem;
-  color: #3b82f6;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.forgot-link:hover {
-  text-decoration: underline;
-}
-
-.social-divider {
-  text-align: center;
-  margin: 24px 0 20px 0;
-  position: relative;
-}
-
-.social-divider::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 100%;
-  height: 1px;
-  background-color: rgba(255, 255, 255, 0.08);
-  z-index: 1;
-}
-
-.social-divider span {
-  background-color: #111827;
-  padding: 0 16px;
-  color: #4b5563;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  position: relative;
-  z-index: 2;
-}
-
-.social-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.social-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 16px;
-  border-radius: var(--radius-sm);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
-}
-
-.social-btn:hover {
-  transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.google-btn:hover {
-  border-color: rgba(66, 133, 244, 0.4);
-  background: rgba(66, 133, 244, 0.1);
-}
-
-.facebook-btn:hover {
-  border-color: rgba(24, 119, 242, 0.4);
-  background: rgba(24, 119, 242, 0.1);
-}
-
-.auth-switch {
-  text-align: center;
-  margin-top: 24px;
-  font-size: 0.85rem;
-  color: #9ca3af;
-}
-
-.auth-link {
-  color: #3b82f6;
-  font-weight: 600;
-  text-decoration: none;
-  margin-left: 4px;
-}
-
-.auth-link:hover {
-  color: #60a5fa;
-  text-decoration: underline;
-}
-
-.login-divider {
-  text-align: center;
-  margin: 32px 0 20px 0;
-  position: relative;
-}
-
-.login-divider::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 100%;
-  height: 1px;
-  background-color: rgba(255, 255, 255, 0.08);
-  z-index: 1;
-}
-
-.login-divider span {
-  background-color: #111827;
-  padding: 0 16px;
-  color: #4b5563;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  position: relative;
-  z-index: 2;
-}
-
-.demo-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.demo-btn {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background-color: #111827;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: var(--radius-md);
-  padding: 12px 20px;
-  cursor: pointer;
-  text-align: left;
-  transition: all var(--transition-fast);
-}
-
-.demo-btn:hover {
-  transform: translateY(-1px);
-}
-
-.demo-admin:hover {
-  border-color: #3b82f6;
-  background-color: rgba(59, 130, 246, 0.05);
-}
-
-.demo-customer:hover {
-  border-color: #10b981;
-  background-color: rgba(16, 185, 129, 0.05);
-}
-
-.demo-btn .shield {
-  color: #3b82f6;
-}
-
-.demo-btn .user-icon {
-  color: #10b981;
-}
-
-.demo-btn-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.demo-btn-text .title {
-  color: white;
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.demo-btn-text .sub {
-  color: #4b5563;
-  font-size: 0.75rem;
-}
-</style>

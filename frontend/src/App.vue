@@ -3,33 +3,17 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { store } from './store';
 import { 
-  LayoutDashboard, 
-  Package, 
-  Layers, 
-  ShoppingBag, 
-  Users, 
-  Heart, 
-  Settings, 
-  LogOut,
-  Search,
-  User as UserIcon,
-  ShoppingCart,
-  Bell,
-  Sliders,
-  CheckCircle,
-  AlertCircle,
-  Menu
+  LayoutDashboard, Package, Layers, ShoppingBag, Users, Heart, Settings, LogOut,
+  Search, User as UserIcon, ShoppingCart, Bell, CheckCircle, AlertCircle, Menu, X
 } from 'lucide-vue-next';
 
 const route = useRoute();
 const router = useRouter();
 
-// Initialize application state
 onMounted(async () => {
   await store.init();
 });
 
-// Determine layout type based on route path
 const layoutType = computed(() => {
   if (route.path === '/login' || route.path === '/register') return 'login';
   if (route.path.startsWith('/admin')) return 'admin';
@@ -52,502 +36,229 @@ const toggleSidebar = () => {
 };
 
 const searchQuery = ref('');
-
 const handleSearch = () => {
   if (searchQuery.value.trim()) {
     router.push({ path: '/products', query: { search: searchQuery.value } });
   }
 };
-
 const handleSearchKeyPress = (e: KeyboardEvent) => {
-  if (e.key === 'Enter') {
-    handleSearch();
-  }
-};
-
-const handleSwitchRole = async (role: 'admin' | 'customer') => {
-  const success = await store.switchUser(role);
-  if (success) {
-    if (role === 'admin') {
-      router.push('/admin/dashboard');
-    } else {
-      router.push('/');
-    }
-  }
+  if (e.key === 'Enter') handleSearch();
 };
 </script>
 
 <template>
-  <div :class="['app-container', layoutType === 'customer' || layoutType === 'customer-profile' ? 'theme-dark' : 'theme-light']">
-    <!-- Toast Alert Notifications -->
-    <div v-if="alert" :class="['alert-toast', `alert-toast-${alert.type}`]">
-      <CheckCircle v-if="alert.type === 'success'" :size="20" />
-      <AlertCircle v-else-if="alert.type === 'error'" :size="20" />
-      <Bell v-else :size="20" />
-      <span>{{ alert.message }}</span>
-    </div>
-
-    <!-- 1. CUSTOMER LAYOUT TOP NAVBAR -->
-    <header v-if="layoutType === 'customer' || layoutType === 'customer-profile'" class="customer-header">
-      <div class="header-container">
-        <div class="header-left">
-          <router-link to="/" class="customer-logo">
-            <span class="logo-bold">Precision</span>
-            <span class="logo-light">Retail</span>
-          </router-link>
-          <nav class="customer-nav">
-            <router-link to="/products" class="nav-item">Shop</router-link>
-            <router-link to="/collection" class="nav-item">Collection</router-link>
-            <router-link to="/deals" class="nav-item">Deals</router-link>
-          </nav>
-        </div>
-        <div class="header-right">
-          <div class="search-bar-wrapper">
-            <Search :size="16" class="search-icon" />
-            <input 
-              type="text" 
-              v-model="searchQuery"
-              @keypress="handleSearchKeyPress"
-              placeholder="Search products..." 
-              class="header-search-input" 
-            />
-          </div>
-          
-          <!-- Auth buttons for non-logged in users -->
-          <template v-if="!currentUser">
-            <router-link to="/login" class="auth-btn auth-btn-secondary">
-              Login
-            </router-link>
-            <router-link to="/register" class="auth-btn auth-btn-primary">
-              Register
-            </router-link>
-          </template>
-          
-          <!-- User buttons for logged in users -->
-          <template v-else>
-            <router-link to="/wishlist" class="icon-btn-circle" title="Wishlist">
-              <Heart :size="20" :class="{ 'filled-heart': store.wishlist.value.length > 0 }" />
-            </router-link>
-            <router-link to="/profile" class="icon-btn-circle" title="Profile">
-              <UserIcon :size="20" />
-            </router-link>
-            <router-link to="/cart" class="cart-btn">
-              <ShoppingCart :size="18" />
-              <span>Cart</span>
-              <span v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</span>
-            </router-link>
-            <button class="logout-btn" @click="handleLogout" title="Logout">
-              <LogOut :size="18" />
-            </button>
-          </template>
-        </div>
+  <div class="min-h-screen flex flex-col font-body bg-neutral-50 text-neutral-900">
+    
+    <!-- ── Toast Alerts ── -->
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="transform -translate-y-4 opacity-0"
+      enter-to-class="transform translate-y-0 opacity-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="transform translate-y-0 opacity-100"
+      leave-to-class="transform -translate-y-4 opacity-0"
+    >
+      <div v-if="alert" :class="[
+        'fixed top-5 right-5 z-[100] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-lg font-medium text-white text-sm',
+        alert.type === 'success' ? 'bg-secondary-500' : alert.type === 'error' ? 'bg-red-500' : 'bg-primary-600'
+      ]">
+        <CheckCircle v-if="alert.type === 'success'" :size="18" />
+        <AlertCircle v-else-if="alert.type === 'error'" :size="18" />
+        <Bell v-else :size="18" />
+        <span>{{ alert.message }}</span>
       </div>
-    </header>
+    </Transition>
 
-    <!-- 2. SPLIT LAYOUT FOR CUSTOMER PROFILE & ADMIN -->
-    <div v-if="layoutType === 'customer-profile' || layoutType === 'admin'" class="split-view">
-      <!-- Mobile Menu Toggle -->
-      <button v-if="layoutType === 'admin'" class="mobile-menu-toggle" @click="toggleSidebar">
-        <Menu :size="24" />
+    <!-- ═══════════════════════════════════════════
+         ADMIN LAYOUT
+    ═══════════════════════════════════════════ -->
+    <template v-if="layoutType === 'admin'">
+      <!-- Mobile hamburger -->
+      <button class="lg:hidden fixed top-4 left-4 z-[60] w-10 h-10 bg-white border border-neutral-200 rounded-lg shadow-sm flex items-center justify-center text-neutral-700" @click="toggleSidebar">
+        <Menu :size="20" />
       </button>
 
-      <!-- SIDEBAR -->
-      <aside :class="['sidebar', { open: sidebarOpen }]">
-        <!-- Sidebar Brand header -->
-        <div class="sidebar-brand">
-          <div class="brand-logo">
-            <Sliders :size="18" />
-          </div>
-          <div class="brand-info">
-            <div class="brand-text">{{ layoutType === 'admin' ? 'Admin Panel' : 'My Account' }}</div>
-            <div class="brand-subtitle">Precision Retail System</div>
-          </div>
-        </div>
+      <!-- Mobile overlay -->
+      <div v-if="sidebarOpen" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden" @click="sidebarOpen = false"></div>
 
-        <!-- Sidebar Navigation -->
-        <nav class="sidebar-nav">
-          <!-- Admin Navigation -->
-          <template v-if="layoutType === 'admin'">
-            <router-link to="/admin/dashboard" class="sidebar-link" active-class="active">
-              <LayoutDashboard :size="18" />
-              <span>Dashboard</span>
-            </router-link>
-            <router-link to="/admin/products" class="sidebar-link" active-class="active">
-              <Package :size="18" />
-              <span>Products</span>
-            </router-link>
-            <router-link to="/admin/categories" class="sidebar-link" active-class="active">
-              <Layers :size="18" />
-              <span>Categories</span>
-            </router-link>
-            <router-link to="/admin/orders" class="sidebar-link" active-class="active">
-              <ShoppingBag :size="18" />
-              <span>Orders</span>
-            </router-link>
-            <router-link to="/admin/users" class="sidebar-link" active-class="active">
-              <Users :size="18" />
-              <span>Users</span>
-            </router-link>
-          </template>
-          
-          <!-- Customer Profile Navigation -->
-          <template v-else>
-            <div class="sidebar-section-title">Account</div>
-            <router-link to="/profile" class="sidebar-link" active-class="active">
-              <UserIcon :size="18" />
-              <span>Profile</span>
-            </router-link>
-            <router-link to="/orders" class="sidebar-link" active-class="active">
-              <ShoppingBag :size="18" />
-              <span>Orders</span>
-            </router-link>
-            <router-link to="/wishlist" class="sidebar-link" active-class="active">
-              <Heart :size="18" />
-              <span>Wishlist</span>
-            </router-link>
-            <router-link to="/cart" class="sidebar-link" active-class="active">
-              <ShoppingCart :size="18" />
-              <span>Cart</span>
-            </router-link>
-          </template>
-        </nav>
-
-        <!-- Sidebar Footer -->
-        <div class="sidebar-footer">
-          <div v-if="currentUser" class="user-profile-summary">
-            <img 
-              :src="currentUser.role === 'admin' ? 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=256&auto=format&fit=crop' : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=256&auto=format&fit=crop'" 
-              :alt="currentUser.name" 
-              class="avatar"
-            />
-            <div class="user-info">
-              <div class="user-name">{{ currentUser.name }}</div>
-              <div class="user-email">{{ currentUser.email }}</div>
+      <!-- ── Admin Sidebar ── -->
+      <aside :class="[
+        'fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-white border-r border-neutral-200 transition-transform duration-300 ease-in-out lg:translate-x-0',
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      ]">
+        <!-- Brand -->
+        <div class="h-16 px-5 flex items-center justify-between border-b border-neutral-100">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center shadow-sm">
+              <span class="text-white font-bold text-sm font-mono">MS</span>
+            </div>
+            <div>
+              <div class="font-bold text-sm text-neutral-900 leading-none">Admin</div>
+              <div class="font-mono text-[10px] text-neutral-400 mt-0.5">E-Commerce</div>
             </div>
           </div>
-          <div class="sidebar-link">
-            <Settings :size="18" />
-            <span>Settings</span>
+          <button class="lg:hidden icon-btn w-7 h-7" @click="sidebarOpen = false"><X :size="14" /></button>
+        </div>
+
+        <!-- Nav -->
+        <nav class="flex-1 p-3 flex flex-col gap-1 overflow-y-auto">
+          <p class="font-mono text-[10px] font-bold text-neutral-400 uppercase tracking-widest px-3 pt-3 pb-2">Main Menu</p>
+
+          <router-link to="/admin/dashboard" @click="sidebarOpen = false"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 font-medium text-sm transition-all"
+            active-class="bg-primary-50 text-primary-700 font-semibold">
+            <LayoutDashboard :size="17" /><span>Dashboard</span>
+          </router-link>
+
+          <router-link to="/admin/products" @click="sidebarOpen = false"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 font-medium text-sm transition-all"
+            active-class="bg-primary-50 text-primary-700 font-semibold">
+            <Package :size="17" /><span>Products</span>
+          </router-link>
+
+          <router-link to="/admin/categories" @click="sidebarOpen = false"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 font-medium text-sm transition-all"
+            active-class="bg-primary-50 text-primary-700 font-semibold">
+            <Layers :size="17" /><span>Categories</span>
+          </router-link>
+
+          <router-link to="/admin/orders" @click="sidebarOpen = false"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 font-medium text-sm transition-all"
+            active-class="bg-primary-50 text-primary-700 font-semibold">
+            <ShoppingBag :size="17" /><span>Orders</span>
+          </router-link>
+
+          <router-link to="/admin/users" @click="sidebarOpen = false"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 font-medium text-sm transition-all"
+            active-class="bg-primary-50 text-primary-700 font-semibold">
+            <Users :size="17" /><span>Users</span>
+          </router-link>
+        </nav>
+
+        <!-- User footer -->
+        <div class="p-3 border-t border-neutral-100">
+          <div v-if="currentUser" class="flex items-center gap-3 p-3 rounded-xl bg-neutral-50 mb-2">
+            <div class="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-sm">
+              {{ currentUser.name?.charAt(0).toUpperCase() }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-semibold text-neutral-900 truncate">{{ currentUser.name }}</div>
+              <div class="font-mono text-[10px] text-neutral-400 truncate">{{ currentUser.email }}</div>
+            </div>
           </div>
-          <div class="sidebar-link text-danger" @click="handleLogout">
-            <LogOut :size="18" />
-            <span>Logout</span>
-          </div>
+          <button class="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-neutral-600 hover:bg-neutral-100 text-sm font-medium transition-all">
+            <Settings :size="16" /><span>Settings</span>
+          </button>
+          <button @click="handleLogout" class="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-red-500 hover:bg-red-50 text-sm font-medium transition-all">
+            <LogOut :size="16" /><span>Sign Out</span>
+          </button>
         </div>
       </aside>
 
-      <!-- MAIN CONTENT PANEL -->
-      <main :class="['main-content', layoutType === 'admin' ? 'admin-main-offset' : 'profile-main-offset']">
-        <router-view />
-      </main>
-    </div>
+      <!-- ── Admin Main Area ── -->
+      <div class="lg:ml-64 flex flex-col min-h-screen">
+        <!-- Admin Top Bar -->
+        <header class="sticky top-0 z-30 bg-white border-b border-neutral-200 h-16 flex items-center px-6 gap-4">
+          <div class="lg:hidden w-8"></div> 
+          <div class="ml-auto flex items-center gap-2">
+            <span class="label-primary text-[10px] font-mono hidden sm:inline-flex">Admin</span>
+            <div v-if="currentUser" class="flex items-center gap-2 text-sm text-neutral-600">
+              <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-xs">
+                {{ currentUser.name?.charAt(0).toUpperCase() }}
+              </div>
+              <span class="font-medium hidden sm:block">{{ currentUser.name }}</span>
+            </div>
+            <button @click="handleLogout" class="icon-btn hover:bg-red-50 hover:text-red-600" title="Logout">
+              <LogOut :size="16" />
+            </button>
+          </div>
+        </header>
 
-    <!-- 3. STANDARD FULL-WIDTH VIEWS (Customer Home/Cart & Login) -->
-    <div v-else class="full-view">
-      <router-view />
-    </div>
+        <!-- Admin Page Content -->
+        <main class="flex-1 p-6 md:p-8 bg-neutral-50">
+          <div class="max-w-7xl mx-auto animate-fade-in-up">
+            <router-view />
+          </div>
+        </main>
+      </div>
+    </template>
+
+    <!-- ═══════════════════════════════════════════
+         CUSTOMER / AUTH LAYOUT
+    ═══════════════════════════════════════════ -->
+    <template v-else>
+      <!-- ── Customer Navbar ── -->
+      <header v-if="layoutType !== 'login'" class="bg-white border-b border-neutral-200 sticky top-0 z-50">
+        <div class="w-full max-w-[1400px] mx-auto px-6 md:px-10 h-16 flex justify-between items-center">
+          
+          <div class="flex items-center gap-10">
+            <router-link to="/" class="flex items-center gap-2">
+              <div class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center shadow-sm shadow-primary-600/30">
+                <span class="text-white font-bold text-sm font-mono">MS</span>
+              </div>
+              <span class="font-bold text-neutral-900 text-lg tracking-tight">E-Commerce</span>
+            </router-link>
+            
+            <nav class="hidden md:flex items-center gap-6">
+              <router-link to="/products" class="nav-link" active-class="nav-link-active">Shop</router-link>
+              <router-link to="/collection" class="nav-link" active-class="nav-link-active">Collections</router-link>
+              <router-link to="/deals" class="nav-link" active-class="nav-link-active">
+                Deals
+                <span class="ml-1 label-tertiary text-[9px] py-0.5 px-1.5 align-middle">HOT</span>
+              </router-link>
+            </nav>
+          </div>
+          
+          <div class="flex items-center gap-3">
+            <div class="relative hidden sm:block w-60 lg:w-72">
+              <Search :size="15" class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+              <input type="text" v-model="searchQuery" @keypress="handleSearchKeyPress" placeholder="Search products..." class="search-field text-sm py-2" />
+            </div>
+            
+            <template v-if="!currentUser">
+              <div class="flex items-center gap-2">
+                <button class="icon-btn"><Heart :size="18" /></button>
+                <button class="icon-btn"><ShoppingCart :size="18" /></button>
+                <router-link to="/login" class="btn-outlined py-2 px-4 text-xs">Sign In</router-link>
+                <router-link to="/register" class="btn-primary py-2 px-4 text-xs">Register</router-link>
+              </div>
+            </template>
+            
+            <template v-else>
+              <div class="flex items-center gap-2">
+                <router-link to="/wishlist" class="icon-btn" title="Wishlist">
+                  <Heart :size="18" :class="{ 'fill-red-500 text-red-500': store.wishlist.value.length > 0 }" />
+                </router-link>
+                <router-link to="/cart" class="relative icon-btn" title="Cart">
+                  <ShoppingCart :size="18" />
+                  <span v-if="cartCount > 0" class="absolute -top-1 -right-1 bg-primary-600 text-white font-bold text-[9px] h-4 w-4 rounded-full flex items-center justify-center font-mono">{{ cartCount }}</span>
+                </router-link>
+                <router-link to="/profile" class="icon-btn" title="Profile">
+                  <UserIcon :size="18" />
+                </router-link>
+                <button @click="handleLogout" class="icon-btn hover:bg-red-50 hover:text-red-600" title="Logout">
+                  <LogOut :size="16" />
+                </button>
+              </div>
+            </template>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <div class="flex-1 flex flex-col w-full">
+        <router-view v-slot="{ Component }">
+          <transition enter-active-class="transition duration-400 ease-out" enter-from-class="opacity-0 translate-y-3" enter-to-class="opacity-100 translate-y-0" leave-active-class="transition duration-200 ease-in" leave-from-class="opacity-100" leave-to-class="opacity-0" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </div>
+    </template>
+
   </div>
 </template>
 
 <style>
-/* CSS overrides or custom page structure inside App.vue */
-.customer-header {
-  height: 80px;
-  background: rgba(5, 5, 5, 0.8);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-}
-
-.header-container {
-  width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 40px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-left, .header-right {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-}
-
-.customer-logo {
-  text-decoration: none;
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  background: var(--accent-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.customer-logo .logo-bold {
-  color: #ffffff;
-}
-
-.customer-logo .logo-light {
-  color: #3b82f6;
-}
-
-.customer-nav {
-  display: flex;
-  gap: 32px;
-}
-
-.nav-item {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  text-decoration: none;
-  position: relative;
-}
-
-.nav-item:hover {
-  color: var(--text-primary);
-}
-
-.nav-item::after {
-  content: '';
-  position: absolute;
-  bottom: -4px;
-  left: 0;
-  width: 0;
-  height: 2px;
-  background: var(--accent-gradient);
-  transition: width var(--transition-fast);
-}
-
-.nav-item:hover::after {
-  width: 100%;
-}
-
-.nav-item.router-link-active {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-.nav-item.router-link-active::after {
-  width: 100%;
-}
-
-.search-bar-wrapper {
-  position: relative;
-  width: 280px;
-}
-
-.search-icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-tertiary);
-  transition: color var(--transition-fast);
-}
-
-.header-search-input {
-  width: 100%;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  border-radius: 50px;
-  padding: 10px 16px 10px 40px;
-  color: var(--text-primary);
-  font-size: 0.85rem;
-  transition: all var(--transition-fast);
-}
-
-.header-search-input:focus {
-  outline: none;
-  border-color: var(--accent-primary);
-  background: var(--bg-secondary);
-  box-shadow: var(--glow-primary);
-}
-
-.header-search-input:focus + .search-icon {
-  color: var(--accent-primary);
-}
-
-.icon-btn-circle {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  text-decoration: none;
-}
-
-.icon-btn-circle:hover {
-  color: var(--text-primary);
-  border-color: var(--border-hover);
-  background: var(--bg-secondary);
-  transform: translateY(-2px);
-}
-
-.filled-heart {
-  color: #ef4444;
-  fill: #ef4444;
-}
-
-.cart-btn {
-  background: var(--accent-gradient);
-  color: #ffffff;
-  border: none;
-  border-radius: 50px;
-  padding: 10px 24px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  text-decoration: none;
-  position: relative;
-  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-}
-
-.cart-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-}
-
-.cart-badge {
-  background: #ffffff;
-  color: var(--accent-primary);
-  font-size: 0.7rem;
-  font-weight: 800;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.auth-btn {
-  padding: 10px 24px;
-  border-radius: 50px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all var(--transition-fast);
-}
-
-.auth-btn-secondary {
-  background: transparent;
-  color: var(--text-secondary);
-  border: 1px solid var(--border-color);
-}
-
-.auth-btn-secondary:hover {
-  color: var(--text-primary);
-  border-color: var(--border-hover);
-  background: var(--bg-tertiary);
-}
-
-.auth-btn-primary {
-  background: var(--accent-gradient);
-  color: #ffffff;
-  border: none;
-  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-}
-
-.auth-btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-}
-
-.logout-btn {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.logout-btn:hover {
-  color: #ef4444;
-  border-color: #ef4444;
-  background: rgba(239, 68, 68, 0.1);
-  transform: translateY(-2px);
-}
-
-/* Split View Structure */
-.split-view {
-  display: flex;
-  flex: 1;
-}
-
-.admin-main-offset {
-  margin-left: 260px;
-  flex: 1;
-  padding: 32px 40px;
-  background-color: #f8fafc;
-  min-height: calc(100vh);
-}
-
-.profile-main-offset {
-  margin-left: 260px;
-  flex: 1;
-  padding: 32px 40px;
-  background-color: #0a0e17;
-  min-height: calc(100vh - 80px);
-}
-
-.full-view {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Mobile Menu Toggle */
-.mobile-menu-toggle {
-  display: none;
-  position: fixed;
-  top: 16px;
-  left: 16px;
-  z-index: 101;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  padding: 8px;
-  cursor: pointer;
-  color: var(--text-primary);
-  transition: all var(--transition-fast);
-}
-
-.mobile-menu-toggle:hover {
-  background-color: var(--bg-tertiary);
-}
-
-@media (max-width: 1024px) {
-  .mobile-menu-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-}
+.nav-link.router-link-active { font-weight: 700; color: #0f172a; }
+.nav-link.router-link-active::after { width: 100%; }
 </style>

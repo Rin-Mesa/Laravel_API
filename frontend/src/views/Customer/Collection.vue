@@ -2,11 +2,11 @@
 import { ref, onMounted, computed } from 'vue';
 import { store } from '../../store';
 import { api } from '../../services/api';
-import { 
-  ShoppingCart, 
-  Heart, 
-  Star, 
-  Search, 
+import {
+  ShoppingCart,
+  Heart,
+  Star,
+  Search,
   Grid,
   List,
   Sparkles
@@ -55,7 +55,7 @@ const filteredProducts = computed(() => {
   // Search filter
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter(p => 
+    filtered = filtered.filter(p =>
       p.name?.toLowerCase().includes(query) ||
       p.description?.toLowerCase().includes(query) ||
       p.sku?.toLowerCase().includes(query)
@@ -106,10 +106,6 @@ const clearFilters = () => {
     <!-- Hero Section -->
     <div class="collection-hero">
       <div class="hero-content">
-        <div class="hero-badge">
-          <Sparkles :size="16" />
-          <span>Curated Selection</span>
-        </div>
         <h1>Our Collection</h1>
         <p>Discover our handpicked premium electronics and accessories</p>
       </div>
@@ -122,16 +118,10 @@ const clearFilters = () => {
         <p>{{ filteredProducts.length }} products available</p>
       </div>
       <div class="header-actions">
-        <button 
-          :class="['view-toggle', { active: viewMode === 'grid' }]" 
-          @click="viewMode = 'grid'"
-        >
+        <button :class="['view-toggle', { active: viewMode === 'grid' }]" @click="viewMode = 'grid'">
           <Grid :size="18" />
         </button>
-        <button 
-          :class="['view-toggle', { active: viewMode === 'list' }]" 
-          @click="viewMode = 'list'"
-        >
+        <button :class="['view-toggle', { active: viewMode === 'list' }]" @click="viewMode = 'list'">
           <List :size="18" />
         </button>
       </div>
@@ -141,12 +131,7 @@ const clearFilters = () => {
     <div class="filters-bar">
       <div class="search-box">
         <Search :size="18" class="search-icon" />
-        <input 
-          type="text" 
-          v-model="searchQuery" 
-          placeholder="Search collection..." 
-          class="search-input"
-        />
+        <input type="text" v-model="searchQuery" placeholder="Search collection..." class="search-input" />
       </div>
 
       <div class="filter-group">
@@ -192,36 +177,22 @@ const clearFilters = () => {
 
     <!-- Products Grid -->
     <div v-else :class="['products-container', viewMode]">
-      <div 
-        v-for="product in filteredProducts" 
-        :key="product.id" 
-        :class="['product-card', viewMode]"
-      >
+      <div v-for="product in filteredProducts" :key="product.id" :class="['product-card', viewMode]">
         <!-- Card Header -->
         <div class="product-card-top">
-          <button 
-            class="wishlist-toggle-btn" 
-            @click="handleToggleWishlist(product.id)"
-            :title="store.isWishlisted(product.id) ? 'Remove from Wishlist' : 'Add to Wishlist'"
-          >
-            <Heart 
-              :size="18" 
-              :class="{ 'wishlist-active': store.isWishlisted(product.id) }" 
-            />
+          <button class="wishlist-toggle-btn" @click="handleToggleWishlist(product.id)"
+            :title="store.isWishlisted(product.id) ? 'Remove from Wishlist' : 'Add to Wishlist'">
+            <Heart :size="18" :class="{ 'wishlist-active': store.isWishlisted(product.id) }" />
           </button>
-          <img 
-            :src="product.image_url" 
-            :alt="product.name" 
-            class="product-image"
-            @error="($event.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=400&auto=format&fit=crop'"
-          />
+          <img :src="product.image_url" :alt="product.name" class="product-image"
+            @error="($event.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=400&auto=format&fit=crop'" />
         </div>
 
         <!-- Card Body -->
         <div class="product-card-body">
           <span class="product-category">{{ product.category?.name }}</span>
           <h3 class="product-name">{{ product.name }}</h3>
-          
+
           <div class="product-rating">
             <div class="stars">
               <Star v-for="i in 5" :key="i" :size="12" class="filled-star" />
@@ -259,7 +230,7 @@ const clearFilters = () => {
 
 /* Hero Section */
 .collection-hero {
-  background: var(--accent-gradient);
+  background: var(--color-neutral-500);
   background-size: 200% 200%;
   animation: gradientShift 8s ease infinite;
   padding: 80px 40px;
@@ -331,9 +302,9 @@ const clearFilters = () => {
   font-family: var(--font-display);
   font-size: 2.5rem;
   font-weight: 800;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   margin-bottom: 4px;
-  background: var(--accent-gradient);
+  background: var(--color-neutral-600);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -354,8 +325,8 @@ const clearFilters = () => {
   height: 44px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
+  background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 50%, #3b82f6 100%);
+  color: white;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -371,7 +342,7 @@ const clearFilters = () => {
 
 .view-toggle.active {
   background: var(--accent-gradient);
-  color: white;
+  color: var(--color-neutral-600);
   border-color: transparent;
   box-shadow: var(--glow-primary);
 }
@@ -423,7 +394,7 @@ const clearFilters = () => {
   box-shadow: var(--glow-primary);
 }
 
-.search-input:focus + .search-icon {
+.search-input:focus+.search-icon {
   color: var(--accent-primary);
 }
 
@@ -497,7 +468,9 @@ const clearFilters = () => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .empty-icon {
@@ -528,7 +501,7 @@ const clearFilters = () => {
 /* Product Card */
 .product-card {
   background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--color-neutral-200);
   border-radius: var(--radius-lg);
   overflow: hidden;
   transition: all var(--transition-normal);
@@ -598,7 +571,7 @@ const clearFilters = () => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(223, 222, 222, 0.725);
   backdrop-filter: blur(10px);
   border: 1px solid var(--border-color);
   display: flex;
@@ -611,7 +584,7 @@ const clearFilters = () => {
 }
 
 .wishlist-toggle-btn:hover {
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(231, 231, 231, 0.8);
   color: #ef4444;
   transform: scale(1.1);
 }
@@ -704,7 +677,7 @@ const clearFilters = () => {
 }
 
 .add-to-cart-btn {
-  background: var(--accent-gradient);
+  background: linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%);
   color: white;
   border: none;
   border-radius: var(--radius-sm);

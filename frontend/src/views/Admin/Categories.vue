@@ -758,7 +758,8 @@ const handleExport = () => {
 }
 
 .modal-card {
-  background-color: var(--bg-secondary);
+  background: #3b82f6;
+  color: white;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   width: 580px;
@@ -769,6 +770,12 @@ const handleExport = () => {
   box-shadow: var(--shadow-lg);
   animation: fadeInUp var(--transition-normal);
   overflow: hidden;
+}
+
+.modal-form-grid .form-input,
+.modal-form-grid .image-upload-zone
+{
+  background-color: rgba(102, 96, 96, 0.419);
 }
 
 .modal-header {

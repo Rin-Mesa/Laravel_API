@@ -642,7 +642,7 @@ setInterval(() => {
 /* Product Card */
 .product-card {
   background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--color-neutral-300);
   border-radius: var(--radius-lg);
   overflow: hidden;
   transition: all var(--transition-normal);
@@ -729,7 +729,7 @@ setInterval(() => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(232, 229, 229, 0.6);
   backdrop-filter: blur(10px);
   border: 1px solid var(--border-color);
   display: flex;

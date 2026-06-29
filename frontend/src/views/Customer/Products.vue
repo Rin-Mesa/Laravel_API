@@ -226,7 +226,7 @@ const clearFilters = () => {
     </div>
 
     <!-- Products Grid -->
-    <div v-else :class="['products-container', viewMode]">
+    <div v-else :class="['products-container', viewMode]" >
       <div 
         v-for="product in filteredProducts" 
         :key="product.id" 
@@ -327,8 +327,8 @@ const clearFilters = () => {
   height: 44px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
+  background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 50%, #3b82f6 100%);
+  color: white;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -344,7 +344,7 @@ const clearFilters = () => {
 
 .view-toggle.active {
   background: var(--accent-gradient);
-  color: white;
+  color: var(--color-neutral-600);
   border-color: transparent;
   box-shadow: var(--glow-primary);
 }
@@ -508,7 +508,7 @@ const clearFilters = () => {
 /* Product Card */
 .product-card {
   background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--color-neutral-300);
   border-radius: var(--radius-lg);
   overflow: hidden;
   transition: all var(--transition-normal);
@@ -578,7 +578,7 @@ const clearFilters = () => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(248, 248, 248, 0.451);
   backdrop-filter: blur(10px);
   border: 1px solid var(--border-color);
   display: flex;
@@ -684,7 +684,7 @@ const clearFilters = () => {
 }
 
 .add-to-cart-btn {
-  background: var(--accent-gradient);
+  background: linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%);
   color: white;
   border: none;
   border-radius: var(--radius-sm);

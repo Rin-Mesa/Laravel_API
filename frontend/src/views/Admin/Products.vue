@@ -267,10 +267,6 @@ const handleBulkDelete = async () => {
       </div>
 
       <div class="header-actions">
-        <span class="live-status-badge">
-          <Sparkles :size="14" class="spark-icon" />
-          System Live
-        </span>
         <button class="btn btn-primary" @click="openAddModal">
           <Plus :size="16" />
           New Product
@@ -344,7 +340,8 @@ const handleBulkDelete = async () => {
             <tbody>
               <tr v-for="product in paginatedProducts" :key="product.id">
                 <td>
-                  <input type="checkbox" :checked="selectedProducts.has(product.id)" @change="toggleSelectProduct(product.id)" class="checkbox-input" />
+                  <input type="checkbox" :checked="selectedProducts.has(product.id)"
+                    @change="toggleSelectProduct(product.id)" class="checkbox-input" />
                 </td>
                 <td>
                   <img :src="product.image_url" :alt="product.name" class="product-thumb"
@@ -551,7 +548,7 @@ const handleBulkDelete = async () => {
     align-items: flex-start;
     gap: 16px;
   }
-  
+
   .header-actions {
     width: 100%;
     justify-content: space-between;
@@ -562,19 +559,6 @@ const handleBulkDelete = async () => {
   display: flex;
   align-items: center;
   gap: 16px;
-}
-
-.live-status-badge {
-  background-color: #eff6ff;
-  color: #2563eb;
-  font-weight: 700;
-  font-size: 0.8rem;
-  padding: 8px 16px;
-  border-radius: 50px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid #bfdbfe;
 }
 
 .spark-icon {
@@ -855,7 +839,8 @@ const handleBulkDelete = async () => {
 }
 
 .modal-card {
-  background-color: var(--bg-secondary);
+  background: #3b82f6;
+  color: white;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   width: 580px;
@@ -907,6 +892,11 @@ const handleBulkDelete = async () => {
 
 .hidden-file-input {
   display: none;
+}
+
+.modal-form-grid .form-input,
+.modal-form-grid .image-upload-zone {
+  background-color: rgba(102, 96, 96, 0.419);
 }
 
 .image-upload-zone {

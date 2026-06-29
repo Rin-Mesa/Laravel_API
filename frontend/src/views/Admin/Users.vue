@@ -672,7 +672,7 @@ const handleExport = () => {
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: rgba(15, 23, 42, 0.4);
+  background-color: rgba(30, 32, 36, 0);
   backdrop-filter: blur(8px);
   z-index: 9999;
   display: flex;
@@ -682,8 +682,9 @@ const handleExport = () => {
 }
 
 .modal-card {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background: #3b82f6;
+  color: white;
+  border: 1px solid var(--color-neutral-400);
   border-radius: var(--radius-lg);
   width: 500px;
   max-width: 100%;
@@ -693,6 +694,10 @@ const handleExport = () => {
   box-shadow: var(--shadow-lg);
   animation: fadeInUp var(--transition-normal);
   overflow: hidden;
+}
+
+.modal-form-grid .form-input{
+  background-color: rgba(102, 96, 96, 0.284);
 }
 
 .modal-header {
@@ -719,6 +724,7 @@ const handleExport = () => {
 .modal-form {
   padding: 24px;
   overflow-y: auto;
+  color: rgba(255, 255, 255, 0.673);
   flex: 1;
 }
 
